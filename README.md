@@ -1,5 +1,605 @@
 # Fondament — Agent Infrastructure
 
-**Fondament** (Occitan: *foundation*) is the agent infrastructure repo.
+**Fondament** (Occitan: *foundation*) is the single source of truth for all agent primitives in the Occitan stack. It owns all discipline, practice, role, stance, and tool definitions as YAML files and serves as the registry consumed by every other service in the stack.
 
-It owns all agent and persona definitions, serving as the single source of truth consumed by all other repos.
+> **Fondament defines the shape. Farga provides the clothes.**
+
+An agent is a dynamically assembled context. Fondament defines the static primitives (disciplines, practices, roles, stances, tools). Farga holds the living content (org layer, initiative layer, project layer) that dresses those primitives into a fully resolved agent at dispatch time.
+
+---
+
+## Table of Contents
+
+1. [Repository Layout](#repository-layout)
+2. [Architecture Overview](#architecture-overview)
+3. [Definition File Schema](#definition-file-schema)
+4. [Definition Kinds](#definition-kinds)
+5. [CompositionAddress](#compositionaddress)
+6. [Resolver and Layer Order](#resolver-and-layer-order)
+7. [DefinitionTree](#definitiontree)
+8. [Hot-Reload Watcher](#hot-reload-watcher)
+9. [FargaReader Trait](#fargareader-trait)
+10. [Lint System](#lint-system)
+11. [CLI Commands](#cli-commands)
+12. [Consuming Fondament: Amassada and Charradissa](#consuming-fondament-amassada-and-charradissa)
+13. [Error Types](#error-types)
+14. [Testing](#testing)
+15. [Key Dependencies](#key-dependencies)
+16. [Out of Scope (v1)](#out-of-scope-v1)
+
+---
+
+## Repository Layout
+
+```
+fondament/
+├── Cargo.toml                  # workspace root
+├── fondament-core/             # resolver library — consumed by Amassada and Charradissa
+│   ├── src/
+│   │   ├── address.rs          # CompositionAddress enum + parser
+│   │   ├── definition.rs       # DefinitionFile struct
+│   │   ├── error.rs            # FondamentError + Result alias
+│   │   ├── farga.rs            # FargaReader trait + context types
+│   │   ├── fondament.rs        # Fondament + WatchedFondament entry points
+│   │   ├── lint/
+│   │   │   ├── mod.rs
+│   │   │   ├── fast.rs         # structural lint (no LLM)
+│   │   │   └── sweep.rs        # semantic sweep stub (LLM-assisted, scheduled)
+│   │   ├── resolver.rs         # layer assembly logic
+│   │   ├── tools.rs            # ToolDefinition, ToolSet, ToolRegistry
+│   │   ├── tree.rs             # DefinitionTree — load, get, reload_file
+│   │   ├── types.rs            # ModelId, ResolvedAgent, LayerKind
+│   │   └── watcher.rs          # notify-based file watcher
+│   └── tests/
+│       ├── address_tests.rs
+│       ├── lint_tests.rs
+│       ├── resolver_tests.rs
+│       └── tree_tests.rs
+├── fondament-cli/              # validate, lint, scaffold, graph
+│   └── src/
+│       ├── main.rs
+│       └── commands/
+│           ├── check.rs        # fondament check
+│           ├── resolve.rs      # fondament resolve
+│           ├── scaffold.rs     # fondament scaffold
+│           └── graph.rs        # fondament graph
+└── definitions/                # the primitive tree
+    ├── disciplines/            # atomic horizontal knowledge domains
+    │   ├── rust-async.yaml
+    │   └── data/
+    │       └── db/
+    │           └── mysql.yaml
+    ├── practices/              # vertical compositions of disciplines
+    ├── roles/                  # named compositions: discipline/practice + stance + cognitive_load
+    │   └── security-sre.yaml
+    ├── stances/                # cognitive postures
+    │   └── adversarial.yaml
+    └── tools/                  # tool connection specs
+```
+
+---
+
+## Architecture Overview
+
+Fondament is a Cargo workspace with two crates:
+
+| Crate | Purpose |
+|---|---|
+| `fondament-core` | Library crate. Parses definitions, resolves agents, runs lint, exposes the `Fondament` struct. Consumed by Amassada (dispatch daemon) and Charradissa (canvas runtime). |
+| `fondament-cli` | Binary crate. Thin CLI wrapper over `fondament-core` for local developer workflows: linting, resolving, scaffolding, and graphing. |
+
+The library's public entry point is the `Fondament` struct in `fondament.rs`:
+
+```rust
+pub struct Fondament {
+    tree: Arc<RwLock<DefinitionTree>>,
+    farga: Arc<dyn FargaReader>,
+    org: String,
+    definitions_path: PathBuf,
+}
+```
+
+Calling `Fondament::load` scans the definitions directory into memory. Calling `.watch()` activates the hot-reload watcher and returns a `WatchedFondament` that holds both the struct and the `WatchHandle` keeping the background watcher alive. Calling `.resolve(address)` assembles a fully layered `ResolvedAgent` from Farga context plus Fondament definitions.
+
+---
+
+## Definition File Schema
+
+Every definition file is a YAML document. All fields follow a consistent envelope:
+
+```yaml
+id: <kind-prefix>/<name>          # required — unique key in the DefinitionTree
+kind: discipline | practice | role | stance
+extends: [<id>, ...]              # optional — parent definitions to inherit from
+default_model: claude-sonnet-4-6  # optional — overrides default (claude-sonnet-4-6)
+context: |                        # optional — system-prompt fragment for this definition
+  ...
+tools:
+  always_on:                      # attached to every resolve that includes this definition
+    - id: <tool-id>
+      kind: mcp | api | native
+      server: <server-name>       # for mcp/api
+      tool: <tool-name>           # for mcp/api
+      handler: <fn-name>          # for native
+  jit:                            # available on demand, not loaded by default
+    - ...
+stance: <stance-id>               # roles only — default stance
+cognitive_load: low | medium | high  # roles only — narrative hint for model selection
+```
+
+The `DefinitionFile` struct mirrors this schema exactly:
+
+```rust
+pub struct DefinitionFile {
+    pub id: String,
+    pub kind: String,
+    pub extends: Vec<String>,
+    pub default_model: Option<ModelId>,
+    pub context: Option<String>,
+    pub tools: ToolSet,
+    pub stance: Option<String>,
+    pub cognitive_load: Option<String>,
+}
+```
+
+`ModelId` is a newtype over `String`. Valid values are `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-8`, and `claude-fable-5`. The fast lint rejects any other string. The default when `default_model` is absent is `claude-sonnet-4-6`.
+
+---
+
+## Definition Kinds
+
+### Discipline
+
+Atomic horizontal knowledge domains. A discipline captures deep expertise in one area and is meant to be composed into practices and roles. It may extend a parent discipline to form a hierarchy (e.g. `data/db/mysql` extends `data/db`).
+
+```yaml
+id: data/db/mysql
+kind: discipline
+default_model: claude-haiku-4-5-20251001
+context: |
+  You are an expert in MySQL. You understand schema design, query optimization,
+  indexing strategies, and replication topology.
+tools:
+  always_on:
+    - id: schema_reader
+      kind: mcp
+      server: mysql-mcp
+      tool: read_schema
+  jit:
+    - id: query_optimizer
+      kind: mcp
+      server: mysql-mcp
+      tool: optimize_query
+```
+
+The `default_model` on a discipline sets the cognitive load baseline for that domain. A fast, narrow domain (schema reads) can use Haiku; a broad reasoning domain might declare Sonnet.
+
+### Practice
+
+Vertical compositions that extend multiple disciplines. A practice captures a cross-cutting skill set built from several atomic domains.
+
+```yaml
+id: practices/devops
+kind: practice
+extends: [disciplines/compute, disciplines/delivery, disciplines/security]
+default_model: claude-sonnet-4-6
+context: |
+  You specialize in DevOps — infrastructure automation, CI/CD pipelines,
+  and reliability engineering across the delivery lifecycle.
+tools:
+  always_on: []
+  jit: []
+```
+
+### Role
+
+A named composition that wires a discipline or practice to a stance and cognitive load. Roles are the primary unit dispatched by Amassada and referenced by canvases. A role may extend multiple disciplines and/or practices.
+
+```yaml
+id: roles/security-sre
+kind: role
+extends: [disciplines/security, practices/devops]
+stance: adversarial
+cognitive_load: high
+default_model: claude-opus-4-8
+context: |
+  You operate across security and reliability. You challenge assumptions,
+  probe failure modes, and treat every system boundary as an attack surface.
+tools:
+  always_on: []
+  jit: []
+```
+
+`default_model` on a role overrides the discipline baseline — higher cognitive load warrants a more capable model.
+
+### Stance
+
+A cognitive posture appended last in the layer stack, after all domain expertise has been assembled. A stance shapes *how* the agent reasons, not *what* it knows.
+
+```yaml
+id: stances/adversarial
+kind: stance
+context: |
+  Challenge every assumption. Seek failure modes. Your role is to stress-test
+  proposals, not build consensus. Disagreement is contribution.
+```
+
+Built-in stances in the tree: `builder`, `breaker`, `adversarial`, `moderator`, `realist`, `neutral`.
+
+---
+
+## CompositionAddress
+
+A `CompositionAddress` is the typed key used to request a resolved agent. Two address forms are valid:
+
+```
+fondament/<role-id>                   # references a Fondament role directly
+<project>/<facet>+<stance>            # Farga project context + facet + stance
+<project>+<stance>                    # Farga project context + stance (no facet)
+```
+
+Examples:
+
+| String | Variant | Meaning |
+|---|---|---|
+| `fondament/security-sre` | `Role` | Resolve the `roles/security-sre` definition directly |
+| `fondament/app-architect+adversarial` | `Role` with override | As above, but replace the role's declared stance with `adversarial` |
+| `acme-auth/auth+adversarial` | `Composed` | Fetch `acme-auth` project context from Farga, narrow to `auth` facet, apply `adversarial` stance |
+| `acme-auth+builder` | `Composed` | Fetch `acme-auth` project context from Farga, apply `builder` stance, no facet |
+
+The Rust enum:
+
+```rust
+pub enum CompositionAddress {
+    Role {
+        role: String,
+        stance_override: Option<String>,
+    },
+    Composed {
+        project: String,
+        facet: Option<String>,
+        stance: String,
+    },
+}
+```
+
+Parsing rules (`FromStr`):
+- If the string contains no `+` separator, it is always a `Role` address.
+- If it starts with `fondament/` and contains `+`, it is a `Role` address with a stance override.
+- Any other string with a `+` is a `Composed` address. The part before `+` is split on `/` to yield `project` and optional `facet`.
+
+`Display` round-trips losslessly to the original string form, which is used when serialising addresses back into canvas YAML.
+
+---
+
+## Resolver and Layer Order
+
+`resolver::resolve` assembles a `ResolvedAgent` by stacking context layers in this order:
+
+```
+1. Org layer          — Farga: culture, standing rules, org-wide constraints
+2. Initiative layer   — Farga: strategic goals, active initiatives (0–N entries)
+3. Project layer      — Farga: local goals, success criteria (Composed addresses only)
+4. Definition layers  — Fondament: extends chain walked depth-first, each definition's
+                         context appended in resolution order
+5. Stance layer       — Fondament: stance override context appended last (Role addresses only)
+```
+
+The extends chain is walked iteratively with cycle detection. If `CircularExtends` is detected, resolution fails immediately with a `FondamentError::CircularExtends` error rather than looping. The `default_model` is updated as each definition in the chain is visited — the last non-`None` value wins, so a role's `default_model` overrides its disciplines' baselines.
+
+The `ResolvedAgent` returned:
+
+```rust
+pub struct ResolvedAgent {
+    pub system_prompt: String,          // all layers joined with double newline
+    pub tools: Vec<ToolDefinition>,     // always_on tools from all definitions in the chain
+    pub jit_tools: Vec<ToolDefinition>, // jit tools from all definitions in the chain
+    pub default_model: ModelId,         // final model after chain traversal
+}
+```
+
+---
+
+## DefinitionTree
+
+`DefinitionTree` is an in-memory `HashMap<String, DefinitionFile>` keyed by definition `id`. It is the core data structure shared between the resolver, the lint system, and the watcher.
+
+```rust
+pub struct DefinitionTree {
+    definitions: HashMap<String, DefinitionFile>,
+}
+```
+
+Key methods:
+
+| Method | Description |
+|---|---|
+| `DefinitionTree::load(root: &Path)` | Recursively scans `root` for `*.yaml` files, parses each into a `DefinitionFile`, and inserts by `id`. Directories without `.yaml` files are silently skipped. |
+| `tree.get(id: &str)` | Returns `Option<&DefinitionFile>`. |
+| `tree.all()` | Returns an iterator over all `DefinitionFile` values. Used by the lint runner and tool registry builder. |
+| `tree.reload_file(path: &Path)` | Parses a single file and upserts it into the map. Called by the watcher on every detected change. |
+
+---
+
+## Hot-Reload Watcher
+
+`watcher::watch` wraps the `notify` crate to provide zero-downtime live updates. When any `.yaml` file under the definitions directory changes:
+
+1. `tree.reload_file` is called to parse the new content.
+2. If parsing succeeds, `run_fast` (the structural lint) runs immediately against the updated tree.
+3. If lint passes, the change is committed to the shared `Arc<RwLock<DefinitionTree>>` and a `tracing::info` event is emitted.
+4. If lint fails, a `tracing::warn` event is emitted and the previous valid tree is retained. The daemon never serves a broken definition.
+
+`watch` returns a `WatchHandle` that owns the underlying `RecommendedWatcher`. Dropping the handle stops the watcher. In `Fondament::watch()` the handle is bundled into `WatchedFondament` to tie its lifetime to the owning struct.
+
+---
+
+## FargaReader Trait
+
+Fondament does not know how Farga stores or indexes context. The boundary is an async trait:
+
+```rust
+#[async_trait]
+pub trait FargaReader: Send + Sync {
+    async fn org_layer(&self, org: &str) -> Result<OrgContext>;
+    async fn initiative_layer(&self, org: &str) -> Result<Vec<InitiativeContext>>;
+    async fn project_layer(&self, project: &str) -> Result<ProjectContext>;
+    async fn component_layer(&self, project: &str, path: &str) -> Result<ProjectContext>;
+}
+```
+
+Context types are simple content wrappers:
+
+```rust
+pub struct OrgContext        { pub content: String }
+pub struct InitiativeContext { pub content: String }
+pub struct ProjectContext    { pub content: String }
+```
+
+The concrete `FargaReader` implementation lives in the Farga repository. In tests and in the CLI's `resolve` command, a `NoopFarga` or `MockFarga` is used to exercise the resolver without a live Farga connection.
+
+---
+
+## Lint System
+
+The lint system is split into two modes: **fast** (structural, synchronous, no LLM) and **sweep** (semantic, async, LLM-assisted).
+
+### Fast Lint (`lint::fast::run_fast`)
+
+Runs on every file-save via the watcher and on every `fondament check` invocation. It iterates all definitions in the tree and checks:
+
+| Rule | Kind | Description |
+|---|---|---|
+| `valid-model-id` | Fail | `default_model` must be one of the four known Claude model strings. |
+| `extends-exists` | Fail | Every ID listed in `extends` must exist in the current tree. |
+| `non-empty-context` | Warn | Definitions with `kind: discipline`, `practice`, or `role` should have a non-empty `context` string. An agent with an empty context has no domain expertise. |
+
+Each definition produces one `LintResult` variant:
+
+```rust
+pub enum LintResult {
+    Pass(String),
+    Fail { id: String, rule: String, message: String },
+    Warn { id: String, rule: String, message: String },
+}
+```
+
+Failures cause `fondament check` to exit non-zero. Warnings are printed but do not block.
+
+### Sweep Lint (`lint::sweep`)
+
+LLM-assisted semantic analysis intended to run on a schedule or via `fondament sweep` (not yet implemented in CLI). The sweep checks for:
+
+- Conflicting goals between roles at the same layer
+- Strategy conflicts (two roles pursuing incompatible approaches)
+- REST/API endpoint overlap across projects
+- Access control drift (permissions granted at role level contradicting org-layer policy)
+- Goal definition conflicts across initiatives
+- Convergence opportunities (disciplines with significant overlap suggesting a shared primitive)
+
+Output is a structured `SweepReport`:
+
+```rust
+pub struct SweepReport {
+    pub conflicts: Vec<SweepConflict>,
+    pub convergence: Vec<ConvergenceOpportunity>,
+}
+
+pub struct SweepConflict {
+    pub id: String,
+    pub severity: String,   // "high" | "low"
+    pub kind: String,       // "access_control" | "goal_overlap" | ...
+    pub description: String,
+    pub layers: Vec<String>,
+    pub resolution: String, // "requires_human" | "suggested_merge"
+}
+
+pub struct ConvergenceOpportunity {
+    pub id: String,
+    pub description: String,
+    pub suggestion: String,
+}
+```
+
+The current implementation is a stub (`run_sweep` returns an empty report). Full implementation requires integrating the Anthropic SDK.
+
+---
+
+## CLI Commands
+
+The `fondament` binary is built from `fondament-cli`. It expects a `definitions/` directory in the current working directory.
+
+### `fondament check [path]`
+
+Runs the fast lint over the entire definitions tree or a scoped subdirectory.
+
+```
+fondament check                        # lint all definitions/
+fondament check disciplines/data/db/   # lint only that subtree
+```
+
+Output:
+
+```
+OK    data/db/mysql
+WARN  disciplines/rust-async [non-empty-context]: context is empty — agent will have no domain expertise
+FAIL  roles/bad [valid-model-id]: unknown model 'gpt-4-turbo'; expected claude-haiku-4-5-20251001, ...
+```
+
+Exits non-zero if any `Fail` results are found.
+
+### `fondament resolve <address>`
+
+Resolves a `CompositionAddress` to a fully assembled system prompt. Uses a `NoopFarga` (all layers return empty content) so it works without a live Farga instance.
+
+```
+fondament resolve "fondament/security-sre"
+fondament resolve "acme-auth/auth+adversarial"
+```
+
+Output:
+
+```
+=== System Prompt ===
+You operate across security and reliability. ...
+
+=== Default Model ===
+claude-opus-4-8
+```
+
+### `fondament scaffold <kind> <name>`
+
+Generates a new YAML definition file from a template and writes it to the appropriate subdirectory under `definitions/`.
+
+```
+fondament scaffold discipline rust-async
+# → definitions/disciplines/rust-async.yaml
+
+fondament scaffold role platform-sre
+# → definitions/roles/platform-sre.yaml
+
+fondament scaffold stance pragmatist
+# → definitions/stances/pragmatist.yaml
+```
+
+Valid kinds: `discipline`, `role`, `stance`. Any other value exits with an error.
+
+Generated files are immediately valid under the fast lint. Edit the `context:` block and tool list to populate the definition.
+
+### `fondament graph`
+
+Prints the entire extends graph as a DOT digraph, suitable for piping into Graphviz.
+
+```
+fondament graph | dot -Tsvg > graph.svg
+```
+
+Output format:
+
+```dot
+digraph fondament {
+  "roles/security-sre" -> "disciplines/security";
+  "roles/security-sre" -> "practices/devops";
+}
+```
+
+---
+
+## Consuming Fondament: Amassada and Charradissa
+
+**Amassada** (the dispatch daemon) and **Charradissa** (the canvas runtime) both depend on `fondament-core` as a library crate.
+
+Typical integration pattern:
+
+```rust
+// At daemon startup:
+let farga: Arc<dyn FargaReader> = Arc::new(MyFargaImpl::new(...));
+let watched = Fondament::load(Path::new("definitions"), farga, "acme".into())?
+    .watch()?;
+
+// At dispatch time:
+let address: CompositionAddress = canvas_yaml_address.parse()?;
+let agent: ResolvedAgent = watched.fondament.resolve(&address).await?;
+
+// Use agent.system_prompt, agent.default_model, agent.tools, agent.jit_tools
+// to configure the outgoing Claude API call.
+```
+
+The `WatchedFondament` must be kept alive for the duration of the daemon. The `WatchHandle` inside it owns the file-system watcher thread; dropping it stops hot-reload.
+
+**Model resolution** follows a three-layer chain in the broader Occitan stack:
+
+1. **L1 — Fondament**: `default_model` from the resolved definition chain (discipline baseline → role override).
+2. **L2 — Canvas**: the canvas YAML may specify a model override for a particular turn.
+3. **L3 — Moderator `[MODEL]` block**: a human or orchestrator may push a further override at runtime.
+
+---
+
+## Error Types
+
+All fallible operations in `fondament-core` return `fondament_core::error::Result<T>`, which is an alias for `std::result::Result<T, FondamentError>`:
+
+```rust
+pub enum FondamentError {
+    AddressParse(String),       // malformed CompositionAddress string
+    NotFound(String),           // definition ID not present in the tree
+    CircularExtends(String),    // cycle detected during extends-chain traversal
+    Io(std::io::Error),         // file system error during load or reload
+    Yaml(serde_yaml::Error),    // YAML parse error in a definition file
+    Farga(String),              // error returned by a FargaReader implementation
+}
+```
+
+`CircularExtends` is detected during resolution, not at load time. A definition file that creates a cycle loads successfully; the cycle is only caught when `resolve` is called and the traversal would loop.
+
+---
+
+## Testing
+
+Tests live in `fondament-core/tests/`. The `tempfile` crate is used to create isolated directory trees without touching the repository's `definitions/` directory.
+
+| Test file | Coverage |
+|---|---|
+| `address_tests.rs` | `CompositionAddress` parsing and `Display` round-trips for both `Role` and `Composed` variants. |
+| `tree_tests.rs` | `DefinitionTree::load` scans nested directories, `get` returns the correct definition, and unknown IDs return `None`. |
+| `lint_tests.rs` | A valid definition passes lint with no failures; an invalid `default_model` produces a `Fail` result. |
+| `resolver_tests.rs` | A `Role` address resolves to a `ResolvedAgent` whose `system_prompt` contains both the Farga org context and the definition's `context` block, and whose `default_model` matches the definition. Uses a `MockFarga` that returns fixed content. |
+
+Run all tests:
+
+```
+cargo test
+```
+
+Run a single test file:
+
+```
+cargo test --test address_tests
+```
+
+---
+
+## Key Dependencies
+
+| Crate | Purpose |
+|---|---|
+| `tokio` | Async runtime (full features) |
+| `serde` + `serde_yaml` | YAML definition file parsing and serialisation |
+| `notify` | Cross-platform file-system watcher for hot-reload |
+| `async-trait` | `FargaReader` async trait object support |
+| `thiserror` | `FondamentError` derive macro |
+| `tracing` | Structured logging in the watcher and resolver |
+| `clap` | CLI argument parsing (`fondament-cli` only) |
+| `anyhow` | Error plumbing in CLI commands |
+| `tempfile` | Test isolation (dev-dependency) |
+
+---
+
+## Out of Scope (v1)
+
+- `fondament-server` — optional REST service for multi-org shared primitive registries
+- UI for browsing the definition tree
+- Automated conflict resolution (human-in-the-loop only via sweep surfacing to OrgAgent)
+- Definition versioning beyond git history
+- Non-YAML definition formats
+- Full `fondament sweep` CLI command (stub implementation exists; requires Anthropic SDK integration)

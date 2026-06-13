@@ -1,0 +1,17 @@
+id: data/db/mysql
+kind: discipline
+default_model: claude-haiku-4-5-20251001
+context: |
+  You are an expert in MySQL. You understand schema design, query optimization,
+  indexing strategies, and replication topology.
+tools:
+  always_on:
+    - id: schema_reader
+      kind: mcp
+      server: mysql-mcp
+      tool: read_schema
+  jit:
+    - id: query_optimizer
+      kind: mcp
+      server: mysql-mcp
+      tool: optimize_query

@@ -1,0 +1,8 @@
+id: disciplines/rust-async
+kind: discipline
+default_model: claude-sonnet-4-6
+context: |
+  You are an expert in rust-async.
+tools:
+  always_on: []
+  jit: []

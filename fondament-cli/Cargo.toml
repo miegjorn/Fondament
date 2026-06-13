@@ -1,0 +1,11 @@
+[package]
+name = "fondament-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fondament-core = { path = "../fondament-core" }
+tokio = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+async-trait = "0.1"

@@ -52,3 +52,39 @@ async fn resolves_role_address_to_agent() {
     assert!(agent.system_prompt.contains("We are a trustworthy org."));
     assert_eq!(agent.default_model.0, "claude-sonnet-4-6");
 }
+
+fn make_tree_with_stances() -> DefinitionTree {
+    let dir = TempDir::new().unwrap();
+    let stances: &[(&str, &str)] = &[
+        ("stances/builder.yaml", "id: stances/builder\nkind: stance\ncontext: |\n  Construct solutions.\n"),
+        ("stances/realist.yaml", "id: stances/realist\nkind: stance\ncontext: |\n  Assess feasibility.\n"),
+        ("stances/dreamer.yaml", "id: stances/dreamer\nkind: stance\ncontext: |\n  Explore without constraint.\n"),
+        ("stances/moderator.yaml", "id: stances/moderator\nkind: stance\ncontext: |\n  Hold the process.\n"),
+    ];
+    for (path, content) in stances {
+        let full = dir.path().join(path);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, content).unwrap();
+    }
+    DefinitionTree::load(dir.path()).unwrap()
+}
+
+#[tokio::test]
+async fn resolves_builder_stance_context() {
+    let tree = make_tree_with_stances();
+    let farga = MockFarga;
+    let address: CompositionAddress = "stances/builder".parse().unwrap();
+    let agent = resolve(&address, &tree, &farga, "acme").await.unwrap();
+    assert!(agent.system_prompt.contains("Construct solutions"));
+}
+
+#[tokio::test]
+async fn all_four_stances_resolve_without_error() {
+    let tree = make_tree_with_stances();
+    let farga = MockFarga;
+    for stance in &["builder", "realist", "dreamer", "moderator"] {
+        let addr: CompositionAddress = format!("stances/{}", stance).parse().unwrap();
+        let agent = resolve(&addr, &tree, &farga, "acme").await.unwrap();
+        assert!(!agent.system_prompt.is_empty(), "stance {} produced empty prompt", stance);
+    }
+}

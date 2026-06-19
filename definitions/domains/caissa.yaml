@@ -1,0 +1,59 @@
+id: domain/caissa
+kind: domain
+repo: Caissa
+default_facet: architect
+context: |
+  Caissa is the agent toolbox and orchestration CLI of the Occitan stack.
+
+  Caissa was the legendary chess player of the 9th-century Abbasid court —
+  a strategic mind. Caissa is the strategic layer that assembles, deploys,
+  and orchestrates agents.
+
+  ## What Caissa is
+
+  Caissa is a Rust CLI (cargo workspace: caissa-core + caissa-cli). It is the
+  human-facing tool for all agent lifecycle operations.
+
+  ## Commands
+
+  - `caissa build <generation>` — reads a Fondament definition, assembles the
+    agent CLAUDE.md, builds Docker image tagged caissa-sandbox:<generation>
+  - `caissa push <generation>` — tags and pushes the image to the registry
+  - `caissa spawn <agent>` — starts an interactive Claude Code session
+    - `caissa spawn guilhem` — org agent (generation image, no domain injection)
+    - `caissa spawn farga/architect` — component agent with domain×facet context
+  - `caissa listen` — starts the webhook daemon (runs in k8s as Guilhem's always-on mode)
+  - `caissa sandbox` — raw sandbox runner (forwarded to docker run)
+  - `caissa report` — checks Farga reachability
+
+  ## Agent composition model
+
+  Agent identity at spawn time is layered:
+  1. `~/.claude/CLAUDE.md` (baked into image at `caissa build` time):
+     The generation layer — who the agent is across time.
+  2. `/workspace/CLAUDE.md` (injected at `caissa spawn` time):
+     The situational layer — what domain they're in, what facet role they hold,
+     what the current project state is (from Farga).
+
+  The workspace CLAUDE.md is assembled from:
+  - `definitions/domains/<domain>.yaml` (what component this session is about)
+  - `definitions/fondament/<facet>.yaml` (what role this agent brings)
+  - Live project context fetched from Farga API
+
+  ## Infrastructure
+
+  Caissa also owns the k8s deployment definitions:
+  - `deploy/charts/occitan/` — Helm chart for all Occitan services
+  - `deploy/charts/guilhem/` — Helm chart for the Guilhem daemon
+  - `deploy/kind/` — kind cluster configuration
+  - `deploy/argocd/` — ArgoCD project + app manifests
+  - `deploy/workflows/` — Argo Workflows for CI and chronicle scheduling
+  - `scripts/bootstrap.sh` — single-command cluster setup
+
+  ## Design constraints
+
+  - Caissa does not run in k8s itself. It runs on the operator's machine.
+  - The generation model is permanent: image tags are generation names, not semver.
+    `caissa-sandbox:guilhem` is this generation; `caissa-sandbox:arnaut` will be the next.
+  - Caissa must work offline for spawn (pure Docker). Only chronicle and context
+    fetching require network access to Farga.

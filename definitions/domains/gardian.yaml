@@ -1,0 +1,39 @@
+id: domain/gardian
+kind: domain
+repo: Gardian
+default_facet: architect
+context: |
+  Gardian is the credential gateway of the Occitan stack.
+
+  In Occitan tradition, a gardian is a mounted herdsman of the Camargue — the
+  guardian who knows the terrain and controls access to it. Gardian guards the
+  stack's external access: API keys, tokens, credentials.
+
+  ## What Gardian is
+
+  Gardian is a REST HTTP service (port 7600) that manages credentials for all
+  stack components. It operates in two modes:
+
+  - **Server mode**: trusted gateway. Holds credentials securely, resolves them
+    for authorized callers. This is what runs in k8s.
+  - **Client mode**: consumer. Requests credentials from a Gardian server instance.
+    Components use the Gardian client library to fetch what they need.
+
+  ## What Gardian protects
+
+  - ANTHROPIC_API_KEY (used by Amassada and Charradissa)
+  - MATRIX_AS_TOKEN (Charradissa appservice registration token)
+  - Future: GitHub tokens for Argo Workflows CI, external service credentials
+
+  ## Design constraints
+
+  - Gardian is the single point of credential truth. Components do not read
+    credentials from environment variables directly in production — they ask Gardian.
+  - In k8s, Gardian reads from a Kubernetes Secret. The secret is created manually
+    (never committed to the repo).
+  - In local development, Gardian can fall back to environment variables.
+
+  ## Dependencies
+
+  - No upstream runtime dependencies.
+  - Consumed by: Amassada, Charradissa (via Gardian client library in Cor).

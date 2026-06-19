@@ -1,0 +1,53 @@
+id: domain/occitan
+kind: domain
+context: |
+  The Occitan stack is a self-referential multi-agent development platform.
+  It exists to develop itself, using agents made of context made by agents.
+
+  The stack is named after the Occitan language and culture — the langue d'oc,
+  the troubadour tradition, the world of guilhem de tudela and arnaut daniel.
+  Names carry history. The generation model is deliberate: each generation of
+  the stack has an Occitan name, and generations federate rather than replace.
+
+  ## Components
+
+  | Component    | Port  | Role                                         |
+  |-------------|-------|----------------------------------------------|
+  | Gardian     | 7600  | Credential gateway                            |
+  | Fondament   | —     | Agent identity library (not a service)        |
+  | Farga       | 7500  | Memory substrate — context store for agents   |
+  | Amassada    | 7700  | Session engine — orchestrates LLM pipelines   |
+  | Charradissa | 9000  | Matrix app service — human-agent bridge       |
+  | Cor         | —     | Shared types library (not a service)          |
+  | Caissa      | —     | Agent toolbox CLI — build, spawn, orchestrate |
+
+  ## Design principles
+
+  - Agents are stateless. All continuity lives in Farga.
+  - Context is the substrate. Identity is assembled at spawn time from Fondament.
+  - The generation model is permanent. occitane.guilhem does not get decommissioned —
+    future generations federate with it via Matrix.
+  - The stack is the first project to self-manage. Guilhem directs development of
+    the system he runs on.
+  - Substrate humility: no agent rewrites the goals it was grown from. Changes to
+    agent definitions go through Fondament and Pierre-Luc.
+
+  ## Agent hierarchy
+
+  The Occitan stack has a fractal agent structure:
+
+  - Guilhem (org agent): holds the widest view, IS the stack's identity
+    - Component agents (farga, gardian, ...): each component's voice and authority
+      - Facet agents (architect, developer, qa, infra, db): specialized lenses
+        within a component
+
+  Cross-component features are owned by the org architect (guilhem/architect).
+  Component architects own their component's internal design.
+  Facet agents (developer, qa, infra) execute work derived by architects.
+
+  ## Current generation
+
+  Generation: Guilhem de Tudela
+  Domain: occitane.guilhem
+  Matrix: @guilhem:occitane.guilhem
+  Phase: II — the stack directs its own development

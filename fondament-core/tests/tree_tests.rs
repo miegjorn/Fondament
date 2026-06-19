@@ -31,3 +31,29 @@ fn returns_none_for_unknown_id() {
     let tree = DefinitionTree::load(dir.path()).unwrap();
     assert!(tree.get("nonexistent").is_none());
 }
+
+#[test]
+fn deconstructive_discipline_has_modifier_true() {
+    let dir = TempDir::new().unwrap();
+    write_file(&dir, "disciplines/deconstructive.yaml", r#"
+id: disciplines/deconstructive
+kind: discipline
+modifier: true
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let def = tree.get("disciplines/deconstructive").unwrap();
+    assert!(def.modifier, "deconstructive must have modifier: true");
+}
+
+#[test]
+fn discipline_without_modifier_field_defaults_to_false() {
+    let dir = TempDir::new().unwrap();
+    write_file(&dir, "disciplines/rust-async.yaml", r#"
+id: disciplines/rust-async
+kind: discipline
+context: "You are a Rust async expert."
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let def = tree.get("disciplines/rust-async").unwrap();
+    assert!(!def.modifier, "discipline without modifier field must default to false");
+}

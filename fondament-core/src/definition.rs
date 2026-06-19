@@ -14,6 +14,8 @@ pub struct DefinitionFile {
     pub tools: ToolSet,
     pub stance: Option<String>,
     pub cognitive_load: Option<String>,
+    #[serde(default)]
+    pub modifier: bool,
 }
 
 impl DefinitionFile {

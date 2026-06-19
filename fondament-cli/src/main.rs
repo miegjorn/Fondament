@@ -15,6 +15,7 @@ enum Commands {
     Resolve { address: String, #[arg(long)] project: Option<String> },
     Scaffold { kind: String, name: String },
     Graph,
+    Sweep { path: Option<String> },
 }
 
 #[tokio::main]
@@ -27,5 +28,6 @@ async fn main() -> anyhow::Result<()> {
         Commands::Resolve { address, .. } => commands::resolve::run(defs, &address).await,
         Commands::Scaffold { kind, name } => commands::scaffold::run(&kind, &name).await,
         Commands::Graph => commands::graph::run(defs).await,
+        Commands::Sweep { path } => commands::sweep::run(defs, path.as_deref()).await,
     }
 }

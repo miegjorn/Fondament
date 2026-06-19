@@ -98,3 +98,9 @@ fn rejects_two_non_modifier_stances() {
     let result: Result<CompositionAddress, _> = "proj/facet+stance1+stance2".parse();
     assert!(result.is_err(), "two non-modifier stances should produce a parse error");
 }
+
+#[test]
+fn rejects_address_with_empty_path() {
+    let result: Result<CompositionAddress, _> = "+deconstructive".parse();
+    assert!(result.is_err(), "address with empty path before + should fail");
+}

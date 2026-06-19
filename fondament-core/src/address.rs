@@ -33,6 +33,10 @@ impl FromStr for CompositionAddress {
         let path = parts[0];
         let qualifiers = &parts[1..];
 
+        if path.is_empty() {
+            return Err(FondamentError::AddressParse("empty path in address".into()));
+        }
+
         let mut modifiers: Vec<String> = Vec::new();
         let mut stance: Option<String> = None;
 

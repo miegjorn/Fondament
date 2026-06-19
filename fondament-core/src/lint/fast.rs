@@ -35,7 +35,7 @@ pub fn run_fast(tree: &DefinitionTree) -> Vec<LintResult> {
         }
 
         // Rule: context should not be empty for discipline/practice/role
-        if matches!(def.kind.as_str(), "discipline" | "practice" | "role") {
+        if matches!(def.kind.as_str(), "discipline" | "practice" | "role") && !def.modifier {
             if def.context.as_deref().map_or(true, str::is_empty) {
                 results.push(LintResult::Warn {
                     id: def.id.clone(),

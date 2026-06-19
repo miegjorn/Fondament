@@ -110,7 +110,7 @@ pub async fn resolve(
     let thinking_budget = if is_deconstructive {
         let preamble = build_deconstructive_preamble(&collected_parts);
         layers.insert(0, preamble);
-        let budget = (collected_parts.len() as u32 * 3_000).min(10_000).max(3_000);
+        let budget = (collected_parts.len() as u32 * 3_000).clamp(3_000, 10_000);
         Some(budget)
     } else {
         None

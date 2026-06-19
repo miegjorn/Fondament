@@ -88,3 +88,65 @@ async fn all_four_stances_resolve_without_error() {
         assert!(!agent.system_prompt.is_empty(), "stance {} produced empty prompt", stance);
     }
 }
+
+fn make_tree_with_deconstructive() -> (DefinitionTree, TempDir) {
+    let dir = TempDir::new().unwrap();
+    let files: &[(&str, &str)] = &[
+        ("disciplines/system-design.yaml",
+         "id: disciplines/system-design\nkind: discipline\ncontext: \"You architect systems.\"\n"),
+        ("disciplines/deconstructive.yaml",
+         "id: disciplines/deconstructive\nkind: discipline\nmodifier: true\n"),
+        ("roles/platform-architect.yaml",
+         "id: fondament/platform-architect\nkind: role\nextends: [disciplines/system-design]\ndefault_model: claude-sonnet-4-6\ncontext: \"You are a platform architect.\"\n"),
+    ];
+    for (path, content) in files {
+        let full = dir.path().join(path);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, content).unwrap();
+    }
+    (DefinitionTree::load(dir.path()).unwrap(), dir)
+}
+
+#[tokio::test]
+async fn deconstructive_modifier_injects_preamble_before_domain_content() {
+    let (tree, _dir) = make_tree_with_deconstructive();
+    let address: CompositionAddress = "fondament/platform-architect+deconstructive".parse().unwrap();
+    let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
+    assert!(
+        agent.system_prompt.contains("deconstructive discipline"),
+        "preamble header must appear in system_prompt"
+    );
+    assert!(
+        agent.system_prompt.contains("Before producing any response"),
+        "preamble instructions must appear in system_prompt"
+    );
+    let preamble_pos = agent.system_prompt.find("deconstructive discipline").unwrap();
+    let domain_pos = agent.system_prompt.find("platform architect").unwrap();
+    assert!(preamble_pos < domain_pos, "preamble must precede domain content");
+}
+
+#[tokio::test]
+async fn deconstructive_modifier_sets_thinking_budget() {
+    let (tree, _dir) = make_tree_with_deconstructive();
+    let address: CompositionAddress = "fondament/platform-architect+deconstructive".parse().unwrap();
+    let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
+    assert!(agent.thinking_budget.is_some(), "thinking_budget must be set with deconstructive modifier");
+    let budget = agent.thinking_budget.unwrap();
+    assert!(budget >= 3_000, "minimum budget is 3000 tokens");
+    assert!(budget <= 10_000, "budget is capped at 10000 tokens");
+}
+
+#[tokio::test]
+async fn without_deconstructive_no_preamble_no_budget() {
+    let (tree, _dir) = make_tree_with_deconstructive();
+    let address: CompositionAddress = "fondament/platform-architect".parse().unwrap();
+    let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
+    assert!(
+        !agent.system_prompt.contains("deconstructive discipline"),
+        "preamble must not appear without deconstructive modifier"
+    );
+    assert!(
+        agent.thinking_budget.is_none(),
+        "thinking_budget must be None without deconstructive modifier"
+    );
+}

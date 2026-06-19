@@ -86,3 +86,15 @@ fn display_roundtrips_with_modifier() {
         assert_eq!(a.to_string(), s, "display must roundtrip for {}", s);
     }
 }
+
+#[test]
+fn rejects_double_plus_empty_segment() {
+    let result: Result<CompositionAddress, _> = "proj/facet++adversarial".parse();
+    assert!(result.is_err(), "double ++ should produce a parse error");
+}
+
+#[test]
+fn rejects_two_non_modifier_stances() {
+    let result: Result<CompositionAddress, _> = "proj/facet+stance1+stance2".parse();
+    assert!(result.is_err(), "two non-modifier stances should produce a parse error");
+}

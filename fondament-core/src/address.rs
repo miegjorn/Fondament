@@ -37,6 +37,11 @@ impl FromStr for CompositionAddress {
         let mut stance: Option<String> = None;
 
         for q in qualifiers {
+            if q.is_empty() {
+                return Err(FondamentError::AddressParse(
+                    format!("empty segment in address: {}", s)
+                ));
+            }
             if KNOWN_MODIFIER_DISCIPLINES.contains(q) {
                 modifiers.push(q.to_string());
             } else if stance.is_some() {

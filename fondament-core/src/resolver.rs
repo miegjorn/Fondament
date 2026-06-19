@@ -44,7 +44,7 @@ pub async fn resolve(
     // Layer 4+: Fondament definition layers
     let role_id = match address {
         CompositionAddress::Role { role, .. } => role.clone(),
-        CompositionAddress::Composed { project, facet, stance } => {
+        CompositionAddress::Composed { project, facet, stance, .. } => {
             format!("roles/{}-{}", facet.as_deref().unwrap_or(project), stance)
         }
     };
@@ -91,5 +91,6 @@ pub async fn resolve(
         tools: always_on,
         jit_tools,
         default_model,
+        thinking_budget: None,
     })
 }

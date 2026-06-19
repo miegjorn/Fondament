@@ -202,6 +202,20 @@ The internal dialog runs inside the extended thinking block and is invisible to 
 
 The fast lint's `non-empty-context` rule is suppressed for modifier disciplines — their empty context is intentional.
 
+#### Why raw decomposition, not pre-synthesis
+
+The preamble injects the agent's actual composed parts verbatim and asks
+the model to debate them live — it deliberately does *not* hand the model
+a pre-resolved summary of how those parts relate. This is an empirical
+choice, not a stylistic one: across six experiments (Haiku 4.5, Sonnet
+4.6, and Opus 4.8; nine question cases spanning architecture, ethics, and
+business-tradeoff domains; one stress test with a deliberately corrupted
+synthesis), raw-voice injection tied or beat pre-synthesized
+crystallization in every comparison and never lost. It also held up as the
+cheapest and fastest option at the Haiku tier, so the mechanism is not
+gated behind an expensive model. Full methodology, results tables, and
+limitations: [`docs/deconstructive-empirical-basis.md`](docs/deconstructive-empirical-basis.md).
+
 ### Practice
 
 Vertical compositions that extend multiple disciplines. A practice captures a cross-cutting skill set built from several atomic domains.

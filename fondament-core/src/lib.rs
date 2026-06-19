@@ -2,6 +2,7 @@ pub mod address;
 pub mod definition;
 pub mod error;
 pub mod farga;
+pub mod farga_http;
 pub mod fondament;
 pub mod lint;
 pub mod resolver;

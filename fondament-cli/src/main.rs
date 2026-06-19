@@ -12,7 +12,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Check { path: Option<String> },
-    Resolve { address: String, #[arg(long)] project: Option<String> },
+    Resolve { address: String, #[arg(long)] project: Option<String>, #[arg(long)] farga_url: Option<String> },
     Scaffold { kind: String, name: String },
     Graph,
     Sweep { path: Option<String> },
@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Commands::Check { path } => commands::check::run(defs, path.as_deref()).await,
-        Commands::Resolve { address, .. } => commands::resolve::run(defs, &address).await,
+        Commands::Resolve { address, farga_url, .. } => commands::resolve::run(defs, &address, farga_url.as_deref()).await,
         Commands::Scaffold { kind, name } => commands::scaffold::run(&kind, &name).await,
         Commands::Graph => commands::graph::run(defs).await,
         Commands::Sweep { path } => commands::sweep::run(defs, path.as_deref()).await,

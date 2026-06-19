@@ -63,18 +63,23 @@ fondament/
 │           ├── resolve.rs      # fondament resolve
 │           ├── scaffold.rs     # fondament scaffold
 │           └── graph.rs        # fondament graph
-└── definitions/                # the primitive tree
-    ├── disciplines/            # atomic horizontal knowledge domains
-    │   ├── rust-async.yaml
-    │   └── data/
-    │       └── db/
-    │           └── mysql.yaml
-    ├── practices/              # vertical compositions of disciplines
-    ├── roles/                  # named compositions: discipline/practice + stance + cognitive_load
-    │   └── security-sre.yaml
-    ├── stances/                # cognitive postures
-    │   └── adversarial.yaml
-    └── tools/                  # tool connection specs
+├── definitions/                # the primitive tree
+│   ├── disciplines/            # atomic horizontal knowledge domains
+│   │   ├── deconstructive.yaml # modifier discipline — no context, injects preamble behaviour
+│   │   ├── rust-async.yaml
+│   │   └── data/
+│   │       └── db/
+│   │           └── mysql.yaml
+│   ├── practices/              # vertical compositions of disciplines
+│   ├── roles/                  # named compositions: discipline/practice + stance + cognitive_load
+│   │   └── security-sre.yaml
+│   ├── stances/                # cognitive postures
+│   │   └── adversarial.yaml
+│   └── tools/                  # tool connection specs
+└── packages/                   # Cor plugin packages (installable via `cor install`)
+    └── deconstructive/
+        ├── plugin.toml         # Cor manifest (id, kind, compatibility, artifact, install)
+        └── deconstructive.yaml # installable artifact
 ```
 
 ---
@@ -125,6 +130,7 @@ tools:
     - ...
 stance: <stance-id>               # roles only — default stance
 cognitive_load: low | medium | high  # roles only — narrative hint for model selection
+modifier: true                    # disciplines only — marks a modifier discipline (see below)
 ```
 
 The `DefinitionFile` struct mirrors this schema exactly:
@@ -139,6 +145,7 @@ pub struct DefinitionFile {
     pub tools: ToolSet,
     pub stance: Option<String>,
     pub cognitive_load: Option<String>,
+    pub modifier: bool,   // default false; true for disciplines that modify assembly behaviour
 }
 ```
 
@@ -173,6 +180,27 @@ tools:
 ```
 
 The `default_model` on a discipline sets the cognitive load baseline for that domain. A fast, narrow domain (schema reads) can use Haiku; a broad reasoning domain might declare Sonnet.
+
+### Modifier Discipline
+
+A special class of discipline that changes **how prompt assembly behaves** rather than contributing corpus content. Modifier disciplines have `modifier: true` and no `context` field. They are referenced in composition addresses alongside a `+` qualifier and are never walked as corpus layers — the resolver detects their presence upfront and applies their behaviour as a side-effect of assembly.
+
+The only built-in modifier discipline is `deconstructive`:
+
+```yaml
+id: disciplines/deconstructive
+kind: discipline
+modifier: true
+```
+
+When `deconstructive` is active the resolver:
+1. Generates a preamble that lists the agent's actual composed parts (disciplines + stance by name)
+2. Injects that preamble as the **first** layer of the system prompt — before org, initiative, and domain context
+3. Sets `thinking_budget` on `ResolvedAgent` so the dispatch layer can enable extended thinking
+
+The internal dialog runs inside the extended thinking block and is invisible to end users. Public output is only the collapsed answer. See [CompositionAddress](#compositionaddress) for address syntax and [Resolver and Layer Order](#resolver-and-layer-order) for injection position.
+
+The fast lint's `non-empty-context` rule is suppressed for modifier disciplines — their empty context is intentional.
 
 ### Practice
 
@@ -233,9 +261,17 @@ Built-in stances in the tree: `builder`, `breaker`, `adversarial`, `moderator`, 
 A `CompositionAddress` is the typed key used to request a resolved agent. Two address forms are valid:
 
 ```
-fondament/<role-id>                   # references a Fondament role directly
-<project>/<facet>+<stance>            # Farga project context + facet + stance
-<project>+<stance>                    # Farga project context + stance (no facet)
+fondament/<role-id>                          # references a Fondament role directly
+<project>/<facet>+<stance>                   # Farga project context + facet + stance
+<project>+<stance>                           # Farga project context + stance (no facet)
+```
+
+Modifier disciplines (e.g. `deconstructive`) stack before the stance with an additional `+`:
+
+```
+fondament/<role-id>+deconstructive           # Role + modifier, no stance
+fondament/<role-id>+deconstructive+<stance>  # Role + modifier + stance override
+<project>/<facet>+deconstructive+<stance>    # Composed + modifier + stance
 ```
 
 Examples:
@@ -243,9 +279,11 @@ Examples:
 | String | Variant | Meaning |
 |---|---|---|
 | `fondament/security-sre` | `Role` | Resolve the `roles/security-sre` definition directly |
-| `fondament/app-architect+adversarial` | `Role` with override | As above, but replace the role's declared stance with `adversarial` |
+| `fondament/app-architect+adversarial` | `Role` | As above, stance override to `adversarial` |
+| `fondament/app-architect+deconstructive` | `Role` | As above, with deconstructive preamble injection and extended thinking enabled |
+| `fondament/app-architect+deconstructive+adversarial` | `Role` | Modifier + stance override combined |
 | `acme-auth/auth+adversarial` | `Composed` | Fetch `acme-auth` project context from Farga, narrow to `auth` facet, apply `adversarial` stance |
-| `acme-auth+builder` | `Composed` | Fetch `acme-auth` project context from Farga, apply `builder` stance, no facet |
+| `acme-auth/auth+deconstructive+adversarial` | `Composed` | As above, with deconstructive modifier |
 
 The Rust enum:
 
@@ -253,22 +291,29 @@ The Rust enum:
 pub enum CompositionAddress {
     Role {
         role: String,
+        modifiers: Vec<String>,          // e.g. ["deconstructive"]
         stance_override: Option<String>,
     },
     Composed {
         project: String,
         facet: Option<String>,
+        modifiers: Vec<String>,          // e.g. ["deconstructive"]
         stance: String,
     },
 }
+
+/// Discipline names that route to `modifiers` rather than `stance` during parsing.
+pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["deconstructive"];
 ```
 
 Parsing rules (`FromStr`):
-- If the string contains no `+` separator, it is always a `Role` address.
-- If it starts with `fondament/` and contains `+`, it is a `Role` address with a stance override.
-- Any other string with a `+` is a `Composed` address. The part before `+` is split on `/` to yield `project` and optional `facet`.
+- The string is split on all `+` characters. The first segment is the path; all subsequent segments are qualifiers.
+- Qualifiers in `KNOWN_MODIFIER_DISCIPLINES` go to `modifiers`. All others go to `stance` (two non-modifier qualifiers is an error).
+- Empty path or empty qualifier segments are errors.
+- If the path starts with `fondament/`, or if no stance qualifier was found, the address is `Role`.
+- Otherwise it is `Composed`. The path is split on `/` to yield `project` and optional `facet`.
 
-`Display` round-trips losslessly to the original string form, which is used when serialising addresses back into canvas YAML.
+`Display` round-trips losslessly: modifiers are emitted before the stance, matching parse order.
 
 ---
 
@@ -277,15 +322,22 @@ Parsing rules (`FromStr`):
 `resolver::resolve` assembles a `ResolvedAgent` by stacking context layers in this order:
 
 ```
-1. Org layer          — Farga: culture, standing rules, org-wide constraints
-2. Initiative layer   — Farga: strategic goals, active initiatives (0–N entries)
-3. Project layer      — Farga: local goals, success criteria (Composed addresses only)
-4. Definition layers  — Fondament: extends chain walked depth-first, each definition's
-                         context appended in resolution order
-5. Stance layer       — Fondament: stance override context appended last (Role addresses only)
+0. Deconstructive preamble — injected first when the address carries the deconstructive modifier;
+                              lists the agent's composed parts and instructs internal decomposition
+                              before collapse (invisible to end users — runs in extended thinking)
+1. Org layer               — Farga: culture, standing rules, org-wide constraints
+2. Initiative layer        — Farga: strategic goals, active initiatives (0–N entries)
+3. Project layer           — Farga: local goals, success criteria (Composed addresses only)
+4. Definition layers       — Fondament: extends chain walked depth-first; each non-modifier
+                              definition's context appended in resolution order; modifier
+                              disciplines are skipped (they have no context)
+5. Stance layer            — Fondament: stance context appended last (Role stance_override
+                              or Composed stance, looked up as stances/<name> in the tree)
 ```
 
 The extends chain is walked iteratively with cycle detection. If `CircularExtends` is detected, resolution fails immediately with a `FondamentError::CircularExtends` error rather than looping. The `default_model` is updated as each definition in the chain is visited — the last non-`None` value wins, so a role's `default_model` overrides its disciplines' baselines.
+
+During resolution, the resolver collects a `parts` list of named components (non-modifier disciplines, stance) for use in the deconstructive preamble. `thinking_budget` is computed as `(parts.len() * 3000).clamp(3000, 10000)` and returned on `ResolvedAgent`; the dispatch layer (Charradissa) is responsible for passing it to the Anthropic API as `thinking.budget_tokens`.
 
 The `ResolvedAgent` returned:
 
@@ -295,6 +347,7 @@ pub struct ResolvedAgent {
     pub tools: Vec<ToolDefinition>,     // always_on tools from all definitions in the chain
     pub jit_tools: Vec<ToolDefinition>, // jit tools from all definitions in the chain
     pub default_model: ModelId,         // final model after chain traversal
+    pub thinking_budget: Option<u32>,   // set when deconstructive modifier is active
 }
 ```
 
@@ -372,7 +425,7 @@ Runs on every file-save via the watcher and on every `fondament check` invocatio
 |---|---|---|
 | `valid-model-id` | Fail | `default_model` must be one of the four known Claude model strings. |
 | `extends-exists` | Fail | Every ID listed in `extends` must exist in the current tree. |
-| `non-empty-context` | Warn | Definitions with `kind: discipline`, `practice`, or `role` should have a non-empty `context` string. An agent with an empty context has no domain expertise. |
+| `non-empty-context` | Warn | Definitions with `kind: discipline`, `practice`, or `role` should have a non-empty `context` string. An agent with an empty context has no domain expertise. Suppressed for modifier disciplines (`modifier: true`) — their empty context is intentional. |
 
 Each definition produces one `LintResult` variant:
 
@@ -523,6 +576,8 @@ let agent: ResolvedAgent = watched.fondament.resolve(&address).await?;
 
 // Use agent.system_prompt, agent.default_model, agent.tools, agent.jit_tools
 // to configure the outgoing Claude API call.
+// If agent.thinking_budget is Some(n), pass thinking: { type: "enabled", budget_tokens: n }
+// to the Anthropic API (deconstructive modifier is active).
 ```
 
 The `WatchedFondament` must be kept alive for the duration of the daemon. The `WatchHandle` inside it owns the file-system watcher thread; dropping it stops hot-reload.
@@ -560,10 +615,10 @@ Tests live in `fondament-core/tests/`. The `tempfile` crate is used to create is
 
 | Test file | Coverage |
 |---|---|
-| `address_tests.rs` | `CompositionAddress` parsing and `Display` round-trips for both `Role` and `Composed` variants. |
-| `tree_tests.rs` | `DefinitionTree::load` scans nested directories, `get` returns the correct definition, and unknown IDs return `None`. |
+| `address_tests.rs` | `CompositionAddress` parsing and `Display` round-trips for both `Role` and `Composed` variants; modifier-only addresses; modifier+stance combined; error cases (empty path, double `+`, two non-modifier stances). |
+| `tree_tests.rs` | `DefinitionTree::load` scans nested directories; `get` returns the correct definition; unknown IDs return `None`; `modifier: true` parses correctly; disciplines without the field default to `modifier: false`. |
 | `lint_tests.rs` | A valid definition passes lint with no failures; an invalid `default_model` produces a `Fail` result. |
-| `resolver_tests.rs` | A `Role` address resolves to a `ResolvedAgent` whose `system_prompt` contains both the Farga org context and the definition's `context` block, and whose `default_model` matches the definition. Uses a `MockFarga` that returns fixed content. |
+| `resolver_tests.rs` | `Role` and `Composed` addresses resolve to correctly assembled system prompts; stance context included for both address forms; deconstructive modifier injects preamble before domain content, sets `thinking_budget`, and scales budget with part count; no preamble or budget without the modifier. Uses a `MockFarga` that returns fixed content. |
 
 Run all tests:
 

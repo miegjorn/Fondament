@@ -1,5 +1,6 @@
-use fondament_core::{address::CompositionAddress, tree::DefinitionTree, resolver::resolve};
+use fondament_core::{address::CompositionAddress, farga_http::HttpFargaReader, tree::DefinitionTree, resolver::resolve};
 use std::path::Path;
+use std::sync::Arc;
 
 struct NoopFarga;
 #[async_trait::async_trait]
@@ -16,11 +17,21 @@ impl fondament_core::farga::FargaReader for NoopFarga {
     }
 }
 
-pub async fn run(defs: &Path, address: &str) -> anyhow::Result<()> {
+pub async fn run(defs: &Path, address: &str, farga_url: Option<&str>) -> anyhow::Result<()> {
     let tree = DefinitionTree::load(defs)?;
     let addr: CompositionAddress = address.parse()?;
-    let agent = resolve(&addr, &tree, &NoopFarga, "local").await?;
+
+    let agent = if let Some(url) = farga_url {
+        let reader = Arc::new(HttpFargaReader::new(url));
+        resolve(&addr, &tree, reader.as_ref(), "local").await?
+    } else {
+        resolve(&addr, &tree, &NoopFarga, "local").await?
+    };
+
     println!("=== System Prompt ===\n{}", agent.system_prompt);
     println!("\n=== Default Model ===\n{}", agent.default_model.0);
+    if let Some(budget) = agent.thinking_budget {
+        println!("\n=== Thinking Budget ===\n{} tokens", budget);
+    }
     Ok(())
 }

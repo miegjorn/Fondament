@@ -22,6 +22,9 @@ pub struct ResolvedAgent {
     pub tools: Vec<crate::tools::ToolDefinition>,
     pub jit_tools: Vec<crate::tools::ToolDefinition>,
     pub default_model: ModelId,
+    /// Set when the deconstructive modifier is active.
+    /// Callers must pass this to the Anthropic API as thinking.budget_tokens.
+    pub thinking_budget: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

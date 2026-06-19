@@ -96,6 +96,8 @@ fn make_tree_with_deconstructive() -> (DefinitionTree, TempDir) {
          "id: disciplines/system-design\nkind: discipline\ncontext: \"You architect systems.\"\n"),
         ("disciplines/deconstructive.yaml",
          "id: disciplines/deconstructive\nkind: discipline\nmodifier: true\n"),
+        ("stances/adversarial.yaml",
+         "id: stances/adversarial\nkind: stance\ncontext: \"Challenge every assumption.\"\n"),
         ("roles/platform-architect.yaml",
          "id: fondament/platform-architect\nkind: role\nextends: [disciplines/system-design]\ndefault_model: claude-sonnet-4-6\ncontext: \"You are a platform architect.\"\n"),
     ];
@@ -149,4 +151,24 @@ async fn without_deconstructive_no_preamble_no_budget() {
         agent.thinking_budget.is_none(),
         "thinking_budget must be None without deconstructive modifier"
     );
+}
+
+#[tokio::test]
+async fn deconstructive_with_stance_collects_stance_as_part() {
+    let (tree, _dir) = make_tree_with_deconstructive();
+    // "fondament/platform-architect+deconstructive" has no stance_override,
+    // but stances/adversarial is in the tree. Test a role that directly references
+    // the stance via a Role with stance_override.
+    let address: CompositionAddress = "fondament/platform-architect+deconstructive+adversarial".parse().unwrap();
+    // This parses as Role { role: "fondament/platform-architect", modifiers: ["deconstructive"], stance_override: Some("adversarial") }
+    let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
+    // Stance context must appear in the system prompt
+    assert!(agent.system_prompt.contains("Challenge every assumption"),
+        "adversarial stance context must appear");
+    // Preamble must be present (deconstructive active)
+    assert!(agent.system_prompt.contains("deconstructive discipline"),
+        "preamble must be injected");
+    // thinking_budget should be higher now: 1 discipline + 1 stance = 2 parts × 3000 = 6000
+    let budget = agent.thinking_budget.unwrap();
+    assert!(budget >= 6_000, "2 parts should yield at least 6000 budget tokens, got {}", budget);
 }

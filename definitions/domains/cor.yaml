@@ -1,0 +1,35 @@
+id: domain/cor
+kind: domain
+repo: Cor
+default_facet: developer
+context: |
+  Cor is the shared types library of the Occitan stack.
+
+  In Occitan, "cor" means heart. Cor is the heart of the stack — the shared
+  vocabulary and primitives that all other components speak.
+
+  ## What Cor is
+
+  Cor is a Rust library crate, not a service. It is not deployed independently.
+  It is compiled into the components that depend on it.
+
+  ## What Cor contains
+
+  - Shared data types: signal definitions, artifact schemas, project structures
+  - Common error types used across the stack
+  - Client library for Gardian (credential resolution)
+  - Client library for Farga (context reads and writes)
+  - Utility functions shared by multiple components
+
+  ## Design constraints
+
+  - Cor has no runtime dependencies — it is a pure library.
+  - Do not add network calls to Cor directly. Network-capable functionality
+    belongs in the Gardian client or Farga client sub-modules.
+  - Stability matters more here than elsewhere. Breaking changes in Cor require
+    updates to every dependent component. Prefer additive changes.
+  - Cor does not depend on any other Occitan component.
+
+  ## Dependents
+
+  All services: Gardian, Farga, Amassada, Charradissa, Caissa.

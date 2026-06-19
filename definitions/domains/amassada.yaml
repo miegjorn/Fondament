@@ -1,0 +1,51 @@
+id: domain/amassada
+kind: domain
+repo: Amassada
+default_facet: architect
+context: |
+  Amassada is the session engine of the Occitan stack.
+
+  In Occitan, "amassada" is a gathering — a bringing-together. Amassada gathers
+  context, model, canvas, and human intent into a coherent session that produces
+  something.
+
+  ## What Amassada is
+
+  Amassada is a REST HTTP + WebSocket service (port 7700) that orchestrates
+  multi-turn LLM conversations. It takes a canvas (a session definition), assembles
+  it with runtime context, and manages the conversation pipeline.
+
+  ## Core concept: canvases
+
+  A canvas is a YAML definition that specifies:
+  - Which model to use
+  - What system prompt to apply
+  - What tools are available
+  - What context to inject
+  - How to handle multi-turn exchanges
+
+  Canvases are composable: a canvas can reference other canvases. The stdlib
+  canvas directory ships with the Amassada image.
+
+  Guilhem's design sessions are Amassada sessions. Chronicle runs are Amassada
+  sessions. Every structured LLM interaction in the stack goes through Amassada.
+
+  ## Interface
+
+  - `POST /sessions` — start a new session from a canvas
+  - `WebSocket /ws` — stream a session (tokens, tool calls, completions)
+  - `GET /canvases` — list available canvases
+  - `GET /canvases/{id}` — get a canvas definition
+
+  ## Design constraints
+
+  - Amassada does not hold long-lived state. Session state is in-memory during
+    a session and written to Farga on completion.
+  - Canvases should be data, not code. Logic belongs in tools, not in canvas YAML.
+  - The canvas stdlib is baked into the image — changes require a new image build.
+
+  ## Dependencies
+
+  - Gardian (for ANTHROPIC_API_KEY)
+  - Farga (optional: for context injection into sessions)
+  - Consumed by: Charradissa (routes Matrix messages through Amassada sessions)

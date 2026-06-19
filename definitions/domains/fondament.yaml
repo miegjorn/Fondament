@@ -1,0 +1,56 @@
+id: domain/fondament
+kind: domain
+repo: Fondament
+default_facet: architect
+context: |
+  Fondament is the agent identity library of the Occitan stack.
+
+  In Occitan, "fondament" means foundation. Fondament is the foundation from
+  which all agent identities in the stack are built.
+
+  ## What Fondament is
+
+  Fondament is a YAML definition library, not a service. It is not deployed
+  independently. It is read by Caissa at build time (`caissa build`) and at
+  spawn time (`caissa spawn`) to assemble agent identities.
+
+  ## Structure
+
+  ```
+  definitions/
+    fondament/      named agent roles (guilhem, developer, app-architect, ...)
+    domains/        component domain contexts (farga, gardian, caissa, ...)
+    disciplines/    technical knowledge layers (rust-async, db/mysql, ...)
+    stances/        deliberative lenses (adversarial, builder, dreamer, realist, ...)
+    roles/          operational roles (security-sre, ...)
+  ```
+
+  ## Composition axes
+
+  Agent identity = generation × domain × facet (+ optional disciplines/stances)
+
+  - **Generation** (fondament/): who the agent is in time and org context
+  - **Domain** (domains/): which component or system the session is about
+  - **Facet** (fondament/ role files): what lens the agent brings to the session
+  - **Disciplines** (disciplines/): deep technical knowledge layers added when relevant
+  - **Stances** (stances/): adversarial, dreamer, realist — deliberative modes
+
+  ## Self-referential property
+
+  Fondament is used to define the agents that work on Fondament. The fondament
+  domain agent uses Fondament definitions to reason about Fondament itself.
+  This is intentional — the loop is the point.
+
+  ## Design constraints
+
+  - Fondament files are YAML, not code. Logic belongs in Caissa, not here.
+  - Generation files in fondament/ are long-lived and persona-heavy. They bake
+    into images and should be stable once a generation is named.
+  - Domain files describe what a component IS — its identity and principles.
+    They are NOT documentation of current state. Current state lives in Farga.
+  - Fondament is also used by the Basque-named production stack (Bosa Properties).
+    Changes here affect both stacks. Cross-stack compatible definitions are preferred.
+
+  ## Consumed by
+
+  Caissa exclusively. No other component reads Fondament at runtime.

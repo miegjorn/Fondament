@@ -1,6 +1,7 @@
 name: Build & push guilhem
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -12,7 +13,8 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on:
+  workflow_dispatch: ubuntu-latest
     steps:
       - uses: actions/checkout@v4  # Fondament repo
 
@@ -54,7 +56,8 @@ jobs:
           docker push "ghcr.io/miegjorn/caissa-sandbox:guilhem-sha-${SHORT_SHA}"
 
   update-caissa:
-    runs-on: ubuntu-latest
+    runs-on:
+  workflow_dispatch: ubuntu-latest
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:

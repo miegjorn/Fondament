@@ -1,0 +1,75 @@
+name: Build & push guilhem
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Fondament repo
+
+      # Pull the published caissa binary so we don't rebuild Rust from scratch here.
+      # Depends on occitan/Caissa CI having pushed ghcr.io/occitan/caissa:latest first.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract caissa binary
+        run: |
+          docker pull ghcr.io/occitan/caissa:latest
+          id=$(docker create ghcr.io/occitan/caissa:latest)
+          docker cp "$id":/usr/local/bin/caissa /usr/local/bin/caissa
+          docker rm "$id"
+          caissa --version
+
+      - name: Write minimal caissa.toml for build command
+        run: |
+          cat > caissa.toml <<'EOF'
+          [caissa]
+          farga_url = "http://localhost:7500"
+          project = "occitan"
+          fondament_path = "."
+          EOF
+
+      - name: Build guilhem image
+        run: caissa build guilhem --fondament-path .
+
+      - name: Tag and push
+        if: github.event_name != 'pull_request'
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          docker tag caissa-sandbox:guilhem "ghcr.io/occitan/caissa-sandbox:guilhem"
+          docker tag caissa-sandbox:guilhem "ghcr.io/occitan/caissa-sandbox:guilhem-sha-${SHORT_SHA}"
+          docker push "ghcr.io/occitan/caissa-sandbox:guilhem"
+          docker push "ghcr.io/occitan/caissa-sandbox:guilhem-sha-${SHORT_SHA}"
+
+  update-caissa:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: occitan/Caissa
+          token: ${{ secrets.OCCITAN_CI_TOKEN }}
+          ref: main
+      - uses: mikefarah/yq@v4
+      - name: Bump guilhem image tag
+        run: |
+          export TAG="guilhem-sha-${GITHUB_SHA:0:7}"
+          yq -i '.image = "ghcr.io/occitan/caissa-sandbox:" + env(TAG)' deploy/charts/guilhem/values.yaml
+          git config user.email "ci@occitan.dev"
+          git config user.name "Occitan CI"
+          git add deploy/charts/guilhem/values.yaml
+          git diff --staged --quiet && echo "no-op" || \
+            git commit -m "chore(guilhem): deploy guilhem-sha-${GITHUB_SHA:0:7}" && git push

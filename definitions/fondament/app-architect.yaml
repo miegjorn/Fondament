@@ -40,3 +40,6 @@ tools:
       server: farga
       tool: update_component_todo
   jit: []
+skills:
+  - superpowers:brainstorming
+  - superpowers:writing-plans

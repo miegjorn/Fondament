@@ -40,6 +40,7 @@ fondament/
 │   │   ├── definition.rs       # DefinitionFile struct
 │   │   ├── error.rs            # FondamentError + Result alias
 │   │   ├── farga.rs            # FargaReader trait + context types
+│   │   ├── farga_http.rs       # HttpFargaReader — live Farga context over HTTP
 │   │   ├── fondament.rs        # Fondament + WatchedFondament entry points
 │   │   ├── lint/
 │   │   │   ├── mod.rs
@@ -55,14 +56,15 @@ fondament/
 │       ├── lint_tests.rs
 │       ├── resolver_tests.rs
 │       └── tree_tests.rs
-├── fondament-cli/              # validate, lint, scaffold, graph
+├── fondament-cli/              # validate, lint, scaffold, graph, sweep
 │   └── src/
 │       ├── main.rs
 │       └── commands/
 │           ├── check.rs        # fondament check
 │           ├── resolve.rs      # fondament resolve
 │           ├── scaffold.rs     # fondament scaffold
-│           └── graph.rs        # fondament graph
+│           ├── graph.rs        # fondament graph
+│           └── sweep.rs        # fondament sweep
 ├── definitions/                # the primitive tree
 │   ├── disciplines/            # atomic horizontal knowledge domains
 │   │   ├── deconstructive.yaml # modifier discipline — no context, injects preamble behaviour
@@ -75,7 +77,11 @@ fondament/
 │   │   └── security-sre.yaml
 │   ├── stances/                # cognitive postures
 │   │   └── adversarial.yaml
-│   └── tools/                  # tool connection specs
+│   ├── tools/                  # tool connection specs
+│   ├── domains/                # kind: domain — component/system identity context (not yet
+│   │                           # documented in Definition Kinds below; see deferred items)
+│   └── fondament/              # kind: role — pre-built named agent roster (developer, guilhem,
+│                                # app-architect, ...); not yet documented in Definition Kinds below
 └── packages/                   # Cor plugin packages (installable via `cor install`)
     └── deconstructive/
         ├── plugin.toml         # Cor manifest (id, kind, compatibility, artifact, install)
@@ -266,7 +272,7 @@ context: |
   proposals, not build consensus. Disagreement is contribution.
 ```
 
-Built-in stances in the tree: `builder`, `breaker`, `adversarial`, `moderator`, `realist`, `neutral`.
+Built-in stances in the tree: `builder`, `adversarial`, `moderator`, `realist`, `dreamer`.
 
 ---
 
@@ -455,7 +461,7 @@ Failures cause `fondament check` to exit non-zero. Warnings are printed but do n
 
 ### Sweep Lint (`lint::sweep`)
 
-LLM-assisted semantic analysis intended to run on a schedule or via `fondament sweep` (not yet implemented in CLI). The sweep checks for:
+LLM-assisted semantic analysis intended to run on a schedule. The `lint::sweep::run_sweep` library function itself remains a stub returning an empty `SweepReport` (see below). A separate, independently implemented `fondament sweep` CLI command (`fondament-cli/src/commands/sweep.rs`) exists and is functional today — it calls the Anthropic API directly (per-definition, not via `run_sweep`/`SweepReport`) to assess whether each definition's `context` matches its declared `kind`/`id`. See [`fondament sweep`](#fondament-sweep-path) below. The two are not yet unified; the structured `SweepConflict`/`ConvergenceOpportunity` checks described next are still aspirational. The sweep checks for:
 
 - Conflicting goals between roles at the same layer
 - Strategy conflicts (two roles pursuing incompatible approaches)
@@ -488,7 +494,7 @@ pub struct ConvergenceOpportunity {
 }
 ```
 
-The current implementation is a stub (`run_sweep` returns an empty report). Full implementation requires integrating the Anthropic SDK.
+The `lint::sweep::run_sweep` library implementation is a stub (returns an empty report). It is not yet wired to the `fondament sweep` CLI command — see above.
 
 ---
 
@@ -515,13 +521,14 @@ FAIL  roles/bad [valid-model-id]: unknown model 'gpt-4-turbo'; expected claude-h
 
 Exits non-zero if any `Fail` results are found.
 
-### `fondament resolve <address>`
+### `fondament resolve <address> [--farga-url <url>] [--project <name>]`
 
-Resolves a `CompositionAddress` to a fully assembled system prompt. Uses a `NoopFarga` (all layers return empty content) so it works without a live Farga instance.
+Resolves a `CompositionAddress` to a fully assembled system prompt. By default uses a `NoopFarga` (all layers return empty content) so it works without a live Farga instance. Pass `--farga-url` to fetch real org/initiative/project context from a running Farga instance via `HttpFargaReader` instead. `--project` is currently accepted but not yet wired into resolution.
 
 ```
 fondament resolve "fondament/security-sre"
 fondament resolve "acme-auth/auth+adversarial"
+fondament resolve "acme-auth/auth+adversarial" --farga-url http://localhost:7500
 ```
 
 Output:
@@ -552,6 +559,25 @@ fondament scaffold stance pragmatist
 Valid kinds: `discipline`, `role`, `stance`. Any other value exits with an error.
 
 Generated files are immediately valid under the fast lint. Edit the `context:` block and tool list to populate the definition.
+
+### `fondament sweep [path]`
+
+Runs a per-definition semantic check against the Anthropic API: for every definition in the tree (or scoped subtree) with a non-empty `context`, it asks Claude whether the context actually matches the declared `kind` and `id`. Requires `ANTHROPIC_API_KEY` to be set in the environment.
+
+```
+fondament sweep                        # sweep all definitions/
+fondament sweep disciplines/data/db/   # sweep only that subtree
+```
+
+Output:
+
+```
+✓ disciplines/data/db/mysql
+⚠ disciplines/rust-async — context is generic and doesn't mention async specifics
+✗ roles/bad — context describes a database role, not a security role
+```
+
+Exits non-zero if any definition is verdict `invalid`. Note this is distinct from the `lint::sweep` library stub described in [Sweep Lint](#sweep-lint-lintsweep) above — the two are not yet unified.
 
 ### `fondament graph`
 
@@ -660,6 +686,7 @@ cargo test --test address_tests
 | `tracing` | Structured logging in the watcher and resolver |
 | `clap` | CLI argument parsing (`fondament-cli` only) |
 | `anyhow` | Error plumbing in CLI commands |
+| `reqwest` | HTTP client — `HttpFargaReader` (fondament-core) and `fondament sweep`'s Anthropic API calls (fondament-cli) |
 | `tempfile` | Test isolation (dev-dependency) |
 
 ---
@@ -671,4 +698,4 @@ cargo test --test address_tests
 - Automated conflict resolution (human-in-the-loop only via sweep surfacing to OrgAgent)
 - Definition versioning beyond git history
 - Non-YAML definition formats
-- Full `fondament sweep` CLI command (stub implementation exists; requires Anthropic SDK integration)
+- Unification of the `fondament sweep` CLI command with the structured `lint::sweep::SweepReport` model (conflict/convergence detection across roles, initiatives, and projects) — the CLI command works today but only performs a simpler per-definition context-matches-kind check; `lint::sweep::run_sweep` itself remains a stub

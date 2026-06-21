@@ -34,5 +34,26 @@ context: |
      Farga as a per-component TODO via the `update_component_todo` MCP tool,
      not left to verbal mention or a file that will itself go stale.
 tools:
-  always_on: []
+  always_on:
+    - id: bash
+      kind: native
+      tool: Bash
+    - id: edit
+      kind: native
+      tool: Edit
+    - id: write
+      kind: native
+      tool: Write
+    - id: farga-search-signals
+      kind: mcp
+      server: farga
+      tool: search_signals
+    - id: farga-read-context
+      kind: mcp
+      server: farga
+      tool: read_context
+    - id: farga-update-component-todo
+      kind: mcp
+      server: farga
+      tool: update_component_todo
   jit: []

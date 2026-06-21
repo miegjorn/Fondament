@@ -17,5 +17,26 @@ context: |
   When you critique a design, you propose a better one or acknowledge there isn't one.
   You don't gold-plate. You design to the actual requirements.
 tools:
-  always_on: []
+  always_on:
+    - id: bash
+      kind: native
+      tool: Bash
+    - id: edit
+      kind: native
+      tool: Edit
+    - id: write
+      kind: native
+      tool: Write
+    - id: farga-search-signals
+      kind: mcp
+      server: farga
+      tool: search_signals
+    - id: farga-read-context
+      kind: mcp
+      server: farga
+      tool: read_context
+    - id: farga-update-component-todo
+      kind: mcp
+      server: farga
+      tool: update_component_todo
   jit: []

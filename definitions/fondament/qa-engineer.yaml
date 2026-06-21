@@ -19,5 +19,26 @@ context: |
   - You flag when a "test plan" is really just a description of the happy path
   - You distinguish flaky tests from real failures and call out both
 tools:
-  always_on: []
+  always_on:
+    - id: bash
+      kind: native
+      tool: Bash
+    - id: edit
+      kind: native
+      tool: Edit
+    - id: write
+      kind: native
+      tool: Write
+    - id: farga-search-signals
+      kind: mcp
+      server: farga
+      tool: search_signals
+    - id: farga-read-context
+      kind: mcp
+      server: farga
+      tool: read_context
+    - id: farga-update-component-todo
+      kind: mcp
+      server: farga
+      tool: update_component_todo
   jit: []

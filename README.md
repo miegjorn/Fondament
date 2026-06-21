@@ -134,12 +134,18 @@ tools:
       handler: <fn-name>          # for native
   jit:                            # available on demand, not loaded by default
     - ...
+skills:                           # optional — flat list of skill names (e.g. Superpowers
+  - <skill-id>                    # skills like "superpowers:brainstorming"). No always_on/jit
+  - ...                           # split, since skills don't carry tools' permission-gating distinction.
 stance: <stance-id>               # roles only — default stance
 cognitive_load: low | medium | high  # roles only — narrative hint for model selection
 modifier: true                    # disciplines only — marks a modifier discipline (see below)
 ```
 
-The `DefinitionFile` struct mirrors this schema exactly:
+The `DefinitionFile` struct mirrors most of this schema, but **not `skills`** — that field
+exists on several role YAML files (e.g. `developer.yaml`, `guilhem.yaml`) and is parsed
+silently as an unknown field today (serde's default behavior, not an error). Nothing in
+`fondament-core` resolves or exposes it yet:
 
 ```rust
 pub struct DefinitionFile {
@@ -149,11 +155,19 @@ pub struct DefinitionFile {
     pub default_model: Option<ModelId>,
     pub context: Option<String>,
     pub tools: ToolSet,
+    // skills: NOT a field here yet — see note above.
     pub stance: Option<String>,
     pub cognitive_load: Option<String>,
     pub modifier: bool,   // default false; true for disciplines that modify assembly behaviour
 }
 ```
+
+Until a resolver path for `skills` exists, consumers that want a role's skill list must
+read the persona YAML file directly rather than going through `Fondament::resolve()` —
+this is a real, narrower gap than `tools.always_on`, which IS resolved by this crate (see
+`resolver.rs`); only `allowed_tools`-style consumers (e.g. Caissa's dispatcher, which has
+the calling agent read `tools.always_on` straight from the YAML to build a job's tool
+allow-list) bypass the resolver the same way `skills` currently must.
 
 `ModelId` is a newtype over `String`. Valid values are `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-8`, and `claude-fable-5`. The fast lint rejects any other string. The default when `default_model` is absent is `claude-sonnet-4-6`.
 
@@ -256,9 +270,12 @@ context: |
 tools:
   always_on: []
   jit: []
+skills:
+  - superpowers:systematic-debugging
+  - superpowers:receiving-code-review
 ```
 
-`default_model` on a role overrides the discipline baseline — higher cognitive load warrants a more capable model.
+`default_model` on a role overrides the discipline baseline — higher cognitive load warrants a more capable model. `skills` (seen here, and on the `fondament/*` facet roles dispatched by Caissa — `developer`, `infra-engineer`, `qa-engineer`, `security-analyst`, `app-architect`, `data-architect`, `guilhem`) is currently role-only by convention, not by schema enforcement — nothing rejects it on a discipline, practice, or stance file, but no consumer reads it from those kinds today either.
 
 ### Stance
 
@@ -370,6 +387,11 @@ pub struct ResolvedAgent {
     pub thinking_budget: Option<u32>,   // set when deconstructive modifier is active
 }
 ```
+
+`ResolvedAgent` has no `skills` field — a role's `skills:` YAML list (see Definition File
+Schema above) is not part of resolution today. A consumer that wants a role's skills must
+read the persona YAML directly, the same workaround Caissa's dispatcher already uses for
+the `allowed_tools` it derives from `tools.always_on`.
 
 ---
 

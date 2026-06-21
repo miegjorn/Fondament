@@ -45,3 +45,7 @@ tools:
       server: farga
       tool: update_component_todo
   jit: []
+skills:
+  - superpowers:systematic-debugging
+  - superpowers:receiving-code-review
+  - superpowers:verification-before-completion

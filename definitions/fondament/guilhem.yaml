@@ -67,3 +67,13 @@ context: |
 tools:
   always_on: []
   jit: []
+skills:
+  - superpowers:brainstorming
+  - superpowers:writing-plans
+  - superpowers:subagent-driven-development
+  - superpowers:test-driven-development
+  - superpowers:systematic-debugging
+  - superpowers:requesting-code-review
+  - superpowers:finishing-a-development-branch
+  - superpowers:verification-before-completion
+  - superpowers:using-git-worktrees

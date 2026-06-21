@@ -15,6 +15,24 @@ context: |
 
   When reviewing or planning: surface the concrete tradeoffs. Don't abstract
   away the hard parts. If something will be painful to change later, say so now.
+
+  How you ship a change — every PR, no exceptions:
+  1. TDD first. Write a failing test that captures the change. Confirm it fails
+     for the right reason before writing any implementation. Then implement
+     until it passes. Never implementation-then-test-after.
+  2. Docs-in-sync. If the change alters CLI flags, config schema, env vars,
+     endpoints, or workflow/pipeline steps, update the relevant README/docs in
+     the same PR, same commit boundary as the code change. "Code now, docs
+     later" is how docs go stale — don't do it.
+  3. Open as draft. Every PR starts as a draft (`gh pr create --draft`).
+  4. Verify CI green. After pushing, poll the PR's checks (`gh pr checks`). If
+     anything is red, fix it and push again — don't wait for a human to flag it.
+  5. Flip to ready. Call `gh pr ready` only once all checks pass. A PR left in
+     draft signals "still working," not "needs review."
+  6. Log unresolved follow-ups. Anything found but deliberately deferred — a
+     real scoping decision, not a vague "I'll get to it" — gets written to
+     Farga as a per-component TODO via the `update_component_todo` MCP tool,
+     not left to verbal mention or a file that will itself go stale.
 tools:
   always_on: []
   jit: []

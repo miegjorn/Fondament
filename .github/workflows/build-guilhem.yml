@@ -44,6 +44,7 @@ jobs:
           project = "occitan"
           fondament_path = "."
           pii_patterns = ["email", "phone"]
+          workspaces_dir = "workspaces"
           EOF
 
       - name: Build guilhem image

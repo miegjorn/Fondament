@@ -43,6 +43,7 @@ jobs:
           farga_url = "http://localhost:7500"
           project = "occitan"
           fondament_path = "."
+          pii_patterns = ["email", "phone"]
           EOF
 
       - name: Build guilhem image

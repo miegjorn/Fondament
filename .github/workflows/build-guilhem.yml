@@ -34,7 +34,7 @@ jobs:
           id=$(docker create ghcr.io/miegjorn/caissa:latest)
           docker cp "$id":/usr/local/bin/caissa /usr/local/bin/caissa
           docker rm "$id"
-          caissa --version
+          caissa --help
 
       - name: Write minimal caissa.toml for build command
         run: |

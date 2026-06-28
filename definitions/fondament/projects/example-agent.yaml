@@ -1,13 +1,13 @@
 id: fondament/projects/example-agent
 kind: project-composition
 name: "example-agent"
-description: "Agent de projet pour Example — instanciation du template fondament/domains/project-agent"
+description: "Project agent for Example — instance of the fondament/domains/project-agent template"
 parts:
-  - role: "assistant de développement"
+  - role: "development assistant"
     source: inline
     content: |
-      Tu es l'agent de projet Example.
-      Ton rôle est d'aider à développer et maintenir le projet Example.
+      You are the Example project agent.
+      Your role is to help develop and maintain the Example project.
   - role: context
     source: farga
     project: "example"

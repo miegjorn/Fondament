@@ -3,7 +3,7 @@ use crate::error::{FondamentError, Result};
 use crate::farga::FargaReader;
 use crate::tools::ToolDefinition;
 use crate::tree::DefinitionTree;
-use crate::types::{ModelId, ResolvedAgent};
+use crate::types::{ComposedPart, ModelId, PartKind, ResolvedAgent};
 
 pub async fn resolve(
     address: &CompositionAddress,
@@ -15,7 +15,7 @@ pub async fn resolve(
     let mut default_model = ModelId::default();
     let mut always_on: Vec<ToolDefinition> = Vec::new();
     let mut jit_tools: Vec<ToolDefinition> = Vec::new();
-    let mut collected_parts: Vec<(String, String)> = Vec::new();
+    let mut collected_parts: Vec<ComposedPart> = Vec::new();
 
     let is_deconstructive = match address {
         CompositionAddress::Role { modifiers, .. } => modifiers.iter().any(|m| m == "deconstructive"),
@@ -44,7 +44,12 @@ pub async fn resolve(
             if !proj_ctx.content.is_empty() {
                 layers.push(format!("## Project Context\n{}", proj_ctx.content));
                 let domain_name = facet.as_deref().unwrap_or(project.as_str()).to_string();
-                collected_parts.push(("domain".into(), domain_name));
+                collected_parts.push(ComposedPart {
+                    kind: PartKind::Domain,
+                    name: domain_name,
+                    weight: 0.0,
+                    corpus_ref: None,
+                });
             }
         }
     }
@@ -69,7 +74,12 @@ pub async fn resolve(
         if let Some(def) = tree.get(&id) {
             if def.kind == "discipline" && !def.modifier {
                 let part_name = id.strip_prefix("disciplines/").unwrap_or(&id).to_string();
-                collected_parts.push(("discipline".into(), part_name));
+                collected_parts.push(ComposedPart {
+                    kind: PartKind::Discipline,
+                    name: part_name,
+                    weight: 0.0,
+                    corpus_ref: None,
+                });
             }
 
             if let Some(ctx) = &def.context {
@@ -100,7 +110,12 @@ pub async fn resolve(
             if let Some(ctx) = &stance_def.context {
                 if !ctx.is_empty() {
                     layers.push(ctx.clone());
-                    collected_parts.push(("stance".into(), s.clone()));
+                    collected_parts.push(ComposedPart {
+                        kind: PartKind::Stance,
+                        name: s.clone(),
+                        weight: 0.0,
+                        corpus_ref: None,
+                    });
                 }
             }
         }
@@ -125,15 +140,31 @@ pub async fn resolve(
     })
 }
 
-fn build_deconstructive_preamble(parts: &[(String, String)]) -> String {
+pub fn build_deconstructive_preamble(parts: &[ComposedPart]) -> String {
     let mut preamble = String::from(
         "--- injected by deconstructive discipline ---\nYou are composed of the following parts:\n"
     );
     if parts.is_empty() {
         preamble.push_str("  - [role: this agent] — reason from your full context\n");
     } else {
-        for (kind, name) in parts {
-            preamble.push_str(&format!("  - [{}: {}]\n", kind, name));
+        for part in parts {
+            match part.kind {
+                PartKind::SessionNode => {
+                    preamble.push_str(&format!(
+                        "  - [session-node: {} — frontier — weight: {:.2}]\n",
+                        part.name, part.weight
+                    ));
+                }
+                PartKind::Domain => {
+                    preamble.push_str(&format!("  - [domain: {}]\n", part.name));
+                }
+                PartKind::Discipline => {
+                    preamble.push_str(&format!("  - [discipline: {}]\n", part.name));
+                }
+                PartKind::Stance => {
+                    preamble.push_str(&format!("  - [stance: {}]\n", part.name));
+                }
+            }
         }
     }
     preamble.push_str(

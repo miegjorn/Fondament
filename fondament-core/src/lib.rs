@@ -10,3 +10,6 @@ pub mod tools;
 pub mod tree;
 pub mod types;
 pub mod watcher;
+
+pub use types::ComposedPart;
+pub use types::PartKind;

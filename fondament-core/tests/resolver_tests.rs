@@ -1,8 +1,9 @@
 use fondament_core::{
     address::CompositionAddress,
     farga::{FargaReader, OrgContext, InitiativeContext, ProjectContext},
-    resolver::resolve,
+    resolver::{build_deconstructive_preamble, resolve},
     tree::DefinitionTree,
+    ComposedPart, PartKind,
 };
 use async_trait::async_trait;
 use tempfile::TempDir;
@@ -195,4 +196,46 @@ context: "You are Guilhem."
 "#;
     let def: fondament_core::definition::DefinitionFile = serde_yaml::from_str(yaml).unwrap();
     assert!(def.component.is_none());
+}
+
+#[test]
+fn composed_part_session_node_renders_with_weight() {
+    let parts = vec![ComposedPart {
+        kind: PartKind::SessionNode,
+        name: "N8".into(),
+        weight: 1.0,
+        corpus_ref: None,
+    }];
+    let preamble = build_deconstructive_preamble(&parts);
+    assert!(
+        preamble.contains("session-node:"),
+        "preamble must contain 'session-node:'"
+    );
+    assert!(
+        preamble.contains("weight:"),
+        "preamble must contain 'weight:'"
+    );
+    assert!(
+        preamble.contains("N8"),
+        "preamble must contain the node name"
+    );
+    assert!(
+        preamble.contains("1.00"),
+        "preamble must render weight as two decimal places"
+    );
+}
+
+#[test]
+fn composed_part_domain_renders_unchanged() {
+    let parts = vec![ComposedPart {
+        kind: PartKind::Domain,
+        name: "auth-service".into(),
+        weight: 0.0,
+        corpus_ref: None,
+    }];
+    let preamble = build_deconstructive_preamble(&parts);
+    assert!(
+        preamble.contains("[domain: auth-service]"),
+        "domain part must render as '[domain: <name>]', got:\n{}", preamble
+    );
 }

@@ -1,5 +1,21 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum PartKind {
+    Domain,
+    Discipline,
+    Stance,
+    SessionNode,
+}
+
+#[derive(Debug, Clone)]
+pub struct ComposedPart {
+    pub kind:       PartKind,
+    pub name:       String,
+    pub weight:     f32,
+    pub corpus_ref: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelId(pub String);
 

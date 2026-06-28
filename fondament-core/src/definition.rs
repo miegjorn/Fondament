@@ -16,6 +16,8 @@ pub struct DefinitionFile {
     pub cognitive_load: Option<String>,
     #[serde(default)]
     pub modifier: bool,
+    #[serde(default)]
+    pub component: Option<String>,
 }
 
 impl DefinitionFile {

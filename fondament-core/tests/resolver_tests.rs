@@ -172,3 +172,27 @@ async fn deconstructive_with_stance_collects_stance_as_part() {
     let budget = agent.thinking_budget.unwrap();
     assert!(budget >= 6_000, "2 parts should yield at least 6000 budget tokens, got {}", budget);
 }
+
+#[test]
+fn definition_file_deserializes_component_field() {
+    let yaml = r#"
+id: fondament/amassada-agent
+kind: component-agent
+component: amassada
+default_model: claude-sonnet-4-6
+context: "You are the Amassada agent."
+"#;
+    let def: fondament_core::definition::DefinitionFile = serde_yaml::from_str(yaml).unwrap();
+    assert_eq!(def.component.as_deref(), Some("amassada"));
+}
+
+#[test]
+fn definition_file_component_defaults_to_none() {
+    let yaml = r#"
+id: fondament/guilhem
+kind: role
+context: "You are Guilhem."
+"#;
+    let def: fondament_core::definition::DefinitionFile = serde_yaml::from_str(yaml).unwrap();
+    assert!(def.component.is_none());
+}

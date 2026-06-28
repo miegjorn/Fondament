@@ -25,6 +25,113 @@ tools:
     assert!(results.iter().all(|r| matches!(r, LintResult::Pass(_))));
 }
 
+// ── project-composition lint ──────────────────────────────────────────────────
+
+const VALID_COMPOSITION: &str = r#"
+id: fondament/projects/alpha-agent
+kind: project-composition
+name: "alpha-agent"
+description: "Agent de projet pour Alpha"
+parts:
+  - role: "assistant de développement"
+    source: inline
+    content: |
+      Tu es l'agent de projet Alpha.
+  - role: context
+    source: farga
+    project: "alpha"
+model: claude-sonnet-4-6
+"#;
+
+#[test]
+fn valid_project_composition_passes_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "fondament/projects/alpha-agent.yaml", VALID_COMPOSITION);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    assert!(
+        results.iter().all(|r| matches!(r, LintResult::Pass(_))),
+        "valid composition must produce only Pass results, got: {:?}", results
+    );
+}
+
+#[test]
+fn composition_missing_name_fails_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "fondament/projects/no-name.yaml", r#"
+id: fondament/projects/no-name
+kind: project-composition
+parts:
+  - role: "dev"
+    source: inline
+    content: "Tu es l'agent."
+model: claude-sonnet-4-6
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    assert!(
+        results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "project-name-present")),
+        "missing name must trigger project-name-present failure"
+    );
+}
+
+#[test]
+fn composition_missing_parts_fails_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "fondament/projects/no-parts.yaml", r#"
+id: fondament/projects/no-parts
+kind: project-composition
+name: "no-parts-agent"
+model: claude-sonnet-4-6
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    assert!(
+        results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "project-parts-present")),
+        "empty parts must trigger project-parts-present failure"
+    );
+}
+
+#[test]
+fn composition_missing_model_fails_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "fondament/projects/no-model.yaml", r#"
+id: fondament/projects/no-model
+kind: project-composition
+name: "no-model-agent"
+parts:
+  - role: "dev"
+    source: inline
+    content: "Tu es l'agent."
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    assert!(
+        results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "project-model-present")),
+        "missing model must trigger project-model-present failure"
+    );
+}
+
+#[test]
+fn composition_farga_part_without_project_fails_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "fondament/projects/bad-farga.yaml", r#"
+id: fondament/projects/bad-farga
+kind: project-composition
+name: "bad-farga-agent"
+parts:
+  - role: context
+    source: farga
+model: claude-sonnet-4-6
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    assert!(
+        results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "farga-project-set")),
+        "farga part without project must trigger farga-project-set failure"
+    );
+}
+
 #[test]
 fn invalid_model_id_fails_lint() {
     let dir = TempDir::new().unwrap();

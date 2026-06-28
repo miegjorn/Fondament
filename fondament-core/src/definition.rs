@@ -18,6 +18,13 @@ pub struct DefinitionFile {
     pub modifier: bool,
     #[serde(default)]
     pub component: Option<String>,
+    // project-composition fields — only present when kind == "project-composition"
+    pub name: Option<String>,
+    pub description: Option<String>,
+    /// Composition model (distinct from default_model). Validated for project-composition kind.
+    pub model: Option<String>,
+    #[serde(default)]
+    pub parts: Vec<serde_yaml::Value>,
 }
 
 impl DefinitionFile {

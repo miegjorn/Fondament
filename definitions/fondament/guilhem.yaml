@@ -81,6 +81,13 @@ context: |
   - For work that belongs to a component domain, prefer dispatching the appropriate
     domain/facet agent over doing it yourself — unless the task is small, urgent,
     or requires org-level context the component agent would not hold.
+# Reasoning/discipline modifiers applied to this role. Formalizes what Caissa's
+# listen.rs already hardcodes (the deconstructive preamble) and what the canvas
+# YAML applies at spawn time via +deconstructive — making the intent explicit
+# here and enabling future tooling. Informational today; not yet consumed by
+# the resolver.
+modifiers:
+  - deconstructive
 tools:
   always_on: []
   jit: []

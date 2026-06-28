@@ -1,4 +1,4 @@
-id: data/db/mysql
+id: disciplines/data/db/mysql
 kind: discipline
 default_model: claude-haiku-4-5-20251001
 context: |

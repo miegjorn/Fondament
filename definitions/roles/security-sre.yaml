@@ -1,6 +1,9 @@
 id: roles/security-sre
 kind: role
-extends: [disciplines/security, practices/devops]
+# extends: [disciplines/security, practices/devops]
+# disciplines/security and practices/devops are planned but not yet defined.
+# practices/ does not exist as a directory yet. Re-add extends once those
+# definitions are created.
 stance: adversarial
 cognitive_load: high
 default_model: claude-opus-4-8

@@ -6,7 +6,7 @@ name = "Deconstructive"
 description = "A reasoning modifier that instructs agents to decompose into constituent parts before collapse. Enables extended thinking. Empirically outperforms crystallization in all tested comparisons."
 authors = ["Pierre-Luc Bedard <bedardpl@gmail.com>"]
 license = "MIT"
-repository = "gitlab.com/cor912026/fondament"
+repository = "https://github.com/miegjorn/Fondament"
 
 [compatibility]
 stack = "occitan"

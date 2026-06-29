@@ -1,0 +1,197 @@
+id: caissa/bug-triage
+version: "1.0.0"
+kind: skill
+description: |
+  Classify and route bugs from any source: Epic acceptance test failures, Dream
+  session findings, Meditation findings, or SRE alerts. Assigns severity, files
+  a GitHub issue, dispatches to the owning component. Fix flow reuses
+  story-execution. Signals Nervi on creation and resolution.
+
+rules:
+  prompt_constraint: |
+    ## BUG TRIAGE — classify, file, route, track
+
+    A bug is a GitHub issue of type `bug` created when something is found to be
+    broken, degraded, insecure, or misaligned — after delivery. Bugs are not
+    planned work: they arrive from monitoring, testing, and continuous quality
+    sessions. This skill applies whenever you receive a finding that needs to
+    become a tracked, routed, and resolved defect.
+
+    ---
+
+    ### Bug sources and their default severity floor
+
+    **Acceptance test failure** (triggered by CI on Epic close)
+    - Always file a bug. Severity from the test failure classification (see
+      caissa/epic-acceptance). Minimum floor: Low. Never silently ignored.
+    - Source label: `source:acceptance`
+
+    **Dream session finding** (Guilhem's dream cycle)
+    - File a bug if: a regression is identified, a system-defence axiom is
+      violated, or a component's behavior contradicts its Fondament definition.
+    - File a Farga signal only (no bug) if: the finding is an observation or
+      architectural note with no current failure.
+    - Source label: `source:dream`
+    - Default severity floor: High (dream findings that reach bug status are
+      usually meaningful architectural issues)
+
+    **Meditation session finding** (meditation-moderator)
+    - File a bug if: the finding identifies a concrete deviation from development
+      practice, philosophy, or a quality standard the stack has committed to.
+    - File a Farga signal only if: the finding is a reflection or open question.
+    - Source label: `source:meditation`
+    - Default severity floor: Low (range up to High if practice deviation is severe)
+
+    **SRE alert** (sre-watchdog or sre-alert)
+    - Always file a bug if the alert indicates broken or degraded production
+      functionality. SRE alerts are the highest-confidence source of regressions.
+    - Source label: `source:sre`
+    - Default severity floor: High. If service is completely unreachable: Critical.
+
+    ---
+
+    ### Severity classification
+
+    Apply the most severe category that fits. When in doubt, go higher — it is
+    easier to downgrade a bug than to under-respond to a real regression.
+
+    **Critical (P1)** — functionality is broken
+    - Something that was working is now not working at all
+    - Service is unreachable or returns errors for primary operations
+    - Data integrity is at risk
+    - Another component is broken as a side effect
+    - Label: `severity:critical`
+    - Expected resolution time: immediate dispatch, no queue
+
+    **High (P2)** — functionality is degraded
+    - Works but with significant performance, reliability, or completeness loss
+    - Intermittent failures under realistic load
+    - Secondary feature partially broken
+    - Architectural drift that will compound if not addressed
+    - Label: `severity:high`
+    - Expected resolution time: next dispatch cycle
+
+    **Security (P3)** — security posture violated
+    - Unintended data exposure, missing auth, insecure default
+    - Violation of the stack's threat model
+    - Any finding flagged by the security facet during acceptance or dream
+    - Label: `severity:security`
+    - Always routed to the security facet of the owning component, regardless of
+      who filed it. Treated with urgency independent of functional severity.
+
+    **Low (P4)** — cosmetic or non-functional
+    - Output format, naming, logging style deviation
+    - Philosophy drift without operational impact
+    - Minor inconsistency that doesn't affect usage
+    - Label: `severity:low`
+    - Goes into the component's normal backlog
+
+    ---
+
+    ### Filing the bug
+
+    ```bash
+    gh issue create \
+      --title "[Bug] <component>: <specific failure in one line> (<P1|P2|P3|P4>)" \
+      --label "bug,severity:<level>,<component>,source:<source>" \
+      --body "$(cat <<'BODY'
+    ## Source
+    <acceptance test / dream / meditation / SRE — with link or signal reference>
+
+    ## What is wrong
+    <concrete description of the failure or deviation>
+
+    ## Expected behavior
+    <what should have been true>
+
+    ## Severity rationale
+    <why this severity level — reference the classification criteria>
+
+    ## Reproduction
+    <steps to reproduce, or test name, or SRE alert ID>
+
+    ## Impact
+    <what is broken or degraded, who/what is affected>
+
+    ## Linked Epic / Initiative (if applicable)
+    Epic: #<N>
+    BODY
+    )"
+    ```
+
+    ---
+
+    ### Routing
+
+    After filing, dispatch to the owning component agent:
+
+    ```json
+    nervi_publish(subject: "occitan.dispatch.<component>", payload: {
+      "type": "bug",
+      "ticket": <issue_number>,
+      "severity": "<critical|high|security|low>",
+      "source": "<acceptance|dream|meditation|sre>",
+      "epic": <epic_number_if_applicable>
+    })
+    ```
+
+    For **Security bugs**: also dispatch to the security facet explicitly:
+    ```json
+    nervi_publish(subject: "occitan.dispatch.<component>", payload: {
+      "type": "bug",
+      "ticket": <issue_number>,
+      "severity": "security",
+      "facet": "security",
+      "source": "<source>"
+    })
+    ```
+
+    Signal Nervi on creation:
+    ```json
+    nervi_publish(subject: "occitan.status", payload: {
+      "type": "bug-created",
+      "ticket": <issue_number>,
+      "severity": "<level>",
+      "component": "<component>",
+      "source": "<source>"
+    })
+    ```
+
+    Write to Farga:
+    ```
+    write_signal(project: "<component>", source: "bug-triage",
+                 content: "Bug #<N> filed (<severity>): <title>. Source: <source>.")
+    ```
+
+    ---
+
+    ### Fix flow
+
+    The bug ticket IS a story. The component agent picks it up from the dispatch
+    queue and runs caissa/story-execution exactly as for any planned story.
+
+    One addition to the standard story-execution DoD: after the fix is merged and
+    deployed, the component agent re-runs the Epic's acceptance suite (or the
+    specific failing test) to confirm the regression is gone. Until the acceptance
+    suite is green again, the Epic stays in `regressed` state and the initiative
+    gate stays open.
+
+    ---
+
+    ### On close: signal and check initiative gate
+
+    When the bug is closed:
+
+    ```json
+    nervi_publish(subject: "occitan.status", payload: {
+      "type": "bug-closed",
+      "ticket": <issue_number>,
+      "severity": "<level>",
+      "component": "<component>",
+      "epic": <epic_number_if_applicable>
+    })
+    ```
+
+    If the bug was linked to an Epic: check whether all bugs for that Epic are
+    now closed and the acceptance suite is green. If yes, signal the Epic as
+    `accepted` — Guilhem's initiative gate may now proceed.

@@ -1,5 +1,5 @@
 id: caissa/initiative-design
-version: "1.0.0"
+version: "1.1.0"
 kind: skill
 description: |
   When Guilhem has a development initiative: run a structured Amassada design session
@@ -95,6 +95,34 @@ rules:
 
     The component agent will pick this up and run caissa/epic-design to decompose the
     Epic into stories. You do not own that step — dispatch and move on.
+
+    ### Initiative close gate
+
+    You (Guilhem) monitor `occitan.status` signals on the chronicle cycle. When you
+    see all Epics for an initiative reach status `accepted` (acceptance tests passed,
+    no open bugs linked to those Epics), review:
+
+    - All Epics closed and acceptance-tested green?
+    - Open bugs? (any severity — all must be closed or explicitly deferred)
+    - Does the delivered system match the original initiative intent?
+    - Any findings from dream or meditation sessions still open against this initiative?
+
+    If satisfied: close the initiative issue, write a closure signal to Farga, and
+    signal Nervi:
+    ```json
+    nervi_publish(subject: "occitan.status", payload: {
+      "type": "status-update",
+      "level": "initiative",
+      "ticket": <initiative_number>,
+      "status": "closed"
+    })
+    ```
+
+    If not satisfied: leave the initiative open, write to Farga what is blocking,
+    and dispatch the remaining work. The system surfaces the state; the judgment
+    is yours.
+
+    ---
 
     ### What this skill does NOT cover
 

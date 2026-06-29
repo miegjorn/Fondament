@@ -1,5 +1,5 @@
 id: caissa/epic-design
-version: "1.1.0"
+version: "1.2.0"
 kind: skill
 description: |
   When a component agent receives an Epic with a design brief: load architect context
@@ -173,9 +173,48 @@ rules:
 
     ---
 
+    ### Required: acceptance test story
+
+    Every Epic must include one mandatory story created by the QA persona:
+
+    ```bash
+    gh issue create \
+      --title "[Story] Acceptance test suite for Epic #<N>" \
+      --label "story,<component>,qa,acceptance" \
+      --body "$(cat <<'BODY'
+    Implement the acceptance test suite for Epic #<N> as specified by the QA
+    persona in the planning session.
+
+    ## Acceptance scenarios to cover
+    <list from the planning session — every scenario specified must have a test>
+
+    ## Location
+    tests/acceptance/epic-<N>/ in the component repo
+
+    ## CI trigger
+    Tests run automatically when the Epic issue is closed (GitHub Actions on
+    issues: [closed] + label: epic). All tests must be automatable — no manual steps.
+
+    ## Definition of Done
+    - [ ] All acceptance scenarios have automated tests
+    - [ ] Tests are tagged for this Epic and discoverable by CI
+    - [ ] Tests pass on the current main branch
+    - [ ] CI job confirmed to trigger correctly on issue close
+
+    Epic: #<epic_number>
+    BODY
+    )"
+    ```
+
+    This story is not optional. An Epic without an acceptance test suite cannot
+    be considered delivered — it has no integration gate.
+
+    ---
+
     ### What this skill does NOT cover
 
     - Spawning the execution group (that is caissa/story-execution)
+    - Running the acceptance tests (that is caissa/epic-acceptance, triggered by CI)
     - Implementing anything
     - Reviewing code
 

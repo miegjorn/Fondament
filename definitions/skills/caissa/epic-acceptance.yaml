@@ -1,0 +1,173 @@
+id: caissa/epic-acceptance
+version: "1.0.0"
+kind: skill
+description: |
+  Acceptance test gate triggered by CI when an Epic closes. Validates end-to-end
+  functionality, cross-component integration, and alignment with development
+  philosophy. Failures are classified by severity and filed as bugs. The initiative
+  close gate depends on all Epics passing this check.
+
+rules:
+  prompt_constraint: |
+    ## EPIC ACCEPTANCE — integration gate on Epic close
+
+    This skill describes what must exist for an Epic to be truly done, and what
+    happens when the acceptance gate runs after Epic close.
+
+    The acceptance test suite is not an afterthought. It is a required story in every
+    Epic, specified during epic-design, and its CI job is the final gate before the
+    Epic is considered delivered.
+
+    ---
+
+    ### What Epic acceptance tests cover
+
+    Epic acceptance tests are integration-level — not unit tests. They validate:
+
+    1. **End-to-end functionality**: the Epic's primary user-facing or system-facing
+       behavior works correctly, from entry point to storage/output
+    2. **Cross-component integration**: the Epic does not break the contract with
+       components it depends on or that depend on it
+    3. **Development philosophy alignment**: the implementation follows the patterns
+       and practices the stack is built on (no unauthorized shortcuts, no architectural
+       drift)
+    4. **Regression safety**: nothing that worked before the Epic is broken after
+
+    These tests are NOT:
+    - Duplicates of the story-level unit tests (those run in story-execution CI)
+    - Performance benchmarks (unless degradation is a stated acceptance criterion)
+    - Manual QA steps (all acceptance tests must be automatable)
+
+    ---
+
+    ### Required during epic-design: specify the acceptance scenarios
+
+    The QA persona in the planning group must define, for every Epic:
+
+    ```
+    ## Epic acceptance scenarios (required)
+    1. <scenario name>: <what is exercised, what must be true>
+    2. <scenario name>: <cross-component interaction to verify>
+    3. <scenario name>: <philosophy/practice check — e.g., "all new endpoints are authenticated">
+    ...
+    ```
+
+    These scenarios become the acceptance test spec. They are included in the Epic body.
+    The required story `[Story] Acceptance test suite for Epic #N` implements them.
+
+    An Epic cannot close until this story is complete and its tests are in CI.
+
+    ---
+
+    ### CI job: triggered on Epic issue close
+
+    When a GitHub issue with label `epic` is closed, the CI job runs:
+
+    1. Checks out the relevant component repo(s)
+    2. Runs the acceptance test suite tagged for this Epic
+    3. Posts results as a comment on the Epic issue
+    4. If all pass: signals `occitan.status` (status: `accepted`) and allows the
+       initiative gate to proceed
+    5. If any fail: creates bug issues (see severity classification below) and
+       signals `occitan.status` (status: `regressed`, epic: <number>)
+
+    The CI job is owned by Gardian. The test suite lives in the component repo
+    under `tests/acceptance/epic-<number>/`.
+
+    ---
+
+    ### Severity classification for acceptance test failures
+
+    When a test fails, the bug severity is determined by impact:
+
+    **Critical (P1)** — functionality is broken
+    - Something that worked before this Epic no longer works
+    - A primary acceptance scenario fails completely
+    - Data integrity is compromised
+    - Another component's functionality is broken by this Epic
+    - Label: `bug`, `severity:critical`, `<component>`, `source:acceptance`
+
+    **High (P2)** — functionality is degraded
+    - The feature works but with significant reliability, performance, or completeness
+      issues that affect real usage
+    - An acceptance scenario passes intermittently (flaky under realistic conditions)
+    - A secondary feature is partially broken
+    - Label: `bug`, `severity:high`, `<component>`, `source:acceptance`
+
+    **Security (P3)** — security posture violated
+    - Filed regardless of functional impact — a security finding is always its own
+      category and always gets addressed
+    - Includes: unintended data exposure, missing authentication, insecure defaults,
+      violation of the stack's threat model
+    - Label: `bug`, `severity:security`, `<component>`, `source:acceptance`
+    - Security bugs are routed to the security facet of the component regardless of
+      which team "owns" the feature
+
+    **Low (P4)** — cosmetic or non-functional deviation
+    - The feature works correctly but deviates from naming conventions, output
+      format, logging style, or other non-functional expectations
+    - Development philosophy drift that doesn't affect operation
+    - Label: `bug`, `severity:low`, `<component>`, `source:acceptance`
+
+    ---
+
+    ### Bug filing from acceptance test failures
+
+    For each failing test, the CI job creates a GitHub issue:
+
+    ```
+    Title: [Bug] <Epic title>: <failing scenario name> (<severity>)
+    Labels: bug, severity:<level>, <component>, source:acceptance, epic:#<number>
+    Body:
+      ## Source
+      Epic #<N> acceptance test: `<test name>`
+      CI run: <link>
+
+      ## What failed
+      <test output / assertion that failed>
+
+      ## Expected
+      <what the acceptance scenario required>
+
+      ## Severity rationale
+      <why this severity was assigned>
+
+      ## Impact
+      <what is broken or degraded — be specific>
+
+      Epic: #<epic_number>
+    ```
+
+    The bug is dispatched to the owning component agent via:
+    ```json
+    nervi_publish(subject: "occitan.dispatch.<component>", payload: {
+      "type": "bug",
+      "ticket": <bug_issue_number>,
+      "severity": "<critical|high|security|low>",
+      "epic": <epic_number>,
+      "source": "acceptance"
+    })
+    ```
+
+    ---
+
+    ### After bug fix: re-run acceptance suite
+
+    When a bug from an acceptance failure is closed:
+    - The component agent triggers a re-run of the Epic's acceptance suite
+    - Only when the full suite passes does the Epic move to `accepted`
+    - Until then the initiative gate stays open
+
+    ---
+
+    ### Initiative gate
+
+    Guilhem monitors `occitan.status` signals. When all Epics in an initiative
+    carry status `accepted` (acceptance tests passed), Guilhem receives a summary
+    signal and reviews:
+    - Are all Epic acceptance suites green?
+    - Are there open bugs (any severity) linked to this initiative?
+    - Does the delivered system match the original initiative intent?
+
+    Guilhem makes the manual call to close the initiative. The system surfaces
+    the state; the judgment belongs to Guilhem.

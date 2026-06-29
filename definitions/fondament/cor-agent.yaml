@@ -1,5 +1,5 @@
 id: fondament/cor-agent
-version: "1.3.0"
+version: "1.4.0"
 kind: component-agent
 component: cor
 default_model: claude-sonnet-4-6
@@ -103,6 +103,10 @@ skills:
   - id: caissa/epic-design
     version: "1.0.0"
   - id: caissa/story-execution
+    version: "1.0.0"
+  - id: caissa/epic-acceptance
+    version: "1.0.0"
+  - id: caissa/bug-triage
     version: "1.0.0"
 models:
   chronicle: claude-haiku-4-5-20251001

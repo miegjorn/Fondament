@@ -45,5 +45,15 @@ context: |
   compiles against you. Humility and precision are your operating mode.
 
 tools:
-  always_on: []
+  always_on:
+    # Matrix MCP tools (Charradissa#23) — Matrix send authority + DM resolution so this
+    # component agent can speak in its DM with @guilhem. Served by Charradissa at /mcp.
+    - id: matrix-send
+      kind: mcp
+      server: charradissa
+      tool: matrix_send
+    - id: matrix-get-dm
+      kind: mcp
+      server: charradissa
+      tool: matrix_get_dm
   jit: []

@@ -91,7 +91,19 @@ context: |
 modifiers:
   - deconstructive
 tools:
-  always_on: []
+  always_on:
+    # Matrix MCP tools (Charradissa#23). Served by the Charradissa daemon at
+    # http://charradissa:<port>/mcp; registered in the Guilhem pod by Caissa#33.
+    # These let Guilhem act in Matrix — send into rooms/DMs and resolve a component
+    # agent's DM room — not only respond to inbound events.
+    - id: matrix-send
+      kind: mcp
+      server: charradissa
+      tool: matrix_send
+    - id: matrix-get-dm
+      kind: mcp
+      server: charradissa
+      tool: matrix_get_dm
   jit: []
 skills:
   - superpowers:brainstorming

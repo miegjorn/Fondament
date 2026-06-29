@@ -15,3 +15,7 @@ thiserror = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 axum = "0.7"
+
+aws-sdk-s3 = { version = "1" }
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-credential-types = "1"

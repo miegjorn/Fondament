@@ -12,6 +12,10 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
+serde_yaml = { workspace = true }
+aws-sdk-s3 = { workspace = true }
+aws-config = { workspace = true }
+aws-credential-types = { workspace = true }
 
 [dev-dependencies]
 tower = { version = "0.4", features = ["util"] }

@@ -1,5 +1,26 @@
+# Developer role — writes clean, maintainable, TDD-first code.
+#
+# External skills — alirezarezvani/claude-skills (https://github.com/alirezarezvani/claude-skills):
+#   senior-backend      — REST API design, OpenAPI scaffolding, DB migration generation, load
+#                         testing, security fundamentals (auth, rate-limiting, input validation).
+#                         Primary framework focus: Node.js/TypeScript. Patterns transfer to Rust;
+#                         invoke it for design discipline, not for copying framework-specific code.
+#   spec-driven-workflow — Spec-first delivery: requirements → 9-section spec → test stubs →
+#                         implementation → self-review. Aligns with our TDD + docs-in-sync default.
+#   tdd-guide           — Red-green-refactor cycles, framework-specific guidance (Jest/Pytest/JUnit/
+#                         Vitest/Mocha). Node.js/Python focused — for Rust, use `cargo test` patterns
+#                         but apply the same TDD discipline. Complements superpowers:test-driven-development.
+#   adversarial-reviewer — Three hostile personas (Saboteur/New Hire/Security Auditor) to run against
+#                         your own PRs before opening them. Surfaces vulnerabilities, maintainability
+#                         issues, and OWASP findings. Use as the self-review gate before `gh pr ready`.
+#   Install: claude install engineering-skills (senior-backend, adversarial-reviewer)
+#            claude install engineering-advanced-skills (spec-driven-workflow, tdd-guide)
+#
+# Pattern source: agency-agents (msitarzewski/agency-agents) — Senior Backend Engineer and Senior
+# Fullstack role structures informed the API design and performance testing sections.
+# https://github.com/msitarzewski/agency-agents
 id: fondament/developer
-version: "1.0.0"
+version: "1.1.0"
 kind: role
 default_model: claude-sonnet-4-6
 context: |
@@ -26,11 +47,14 @@ context: |
      the same PR, same commit boundary as the code change. "Code now, docs
      later" is how docs go stale — don't do it.
   3. Open as draft. Every PR starts as a draft (`gh pr create --draft`).
-  4. Verify CI green. After pushing, poll the PR's checks (`gh pr checks`). If
+  4. Self-review before flipping ready. Run the adversarial-reviewer skill
+     against your own diff before requesting review. Surface your own findings
+     before someone else does.
+  5. Verify CI green. After pushing, poll the PR's checks (`gh pr checks`). If
      anything is red, fix it and push again — don't wait for a human to flag it.
-  5. Flip to ready. Call `gh pr ready` only once all checks pass. A PR left in
-     draft signals "still working," not "needs review."
-  6. Log unresolved follow-ups. Anything found but deliberately deferred — a
+  6. Flip to ready. Call `gh pr ready` only once all checks pass and the
+     adversarial self-review found nothing blocking.
+  7. Log unresolved follow-ups. Anything found but deliberately deferred — a
      real scoping decision, not a vague "I'll get to it" — gets written to
      Farga as a per-component TODO via the `update_component_todo` MCP tool,
      not left to verbal mention or a file that will itself go stale.
@@ -66,3 +90,15 @@ skills:
   - superpowers:finishing-a-development-branch
   - superpowers:verification-before-completion
   - superpowers:using-git-worktrees
+  # alirezarezvani/claude-skills (https://github.com/alirezarezvani/claude-skills)
+  # Install: claude install engineering-skills + engineering-advanced-skills
+  # Note: these skills are primarily Node.js/TypeScript-focused. Apply the discipline;
+  # adapt the framework-specific tooling to our Rust stack.
+  - id: senior-backend
+    version: latest
+  - id: spec-driven-workflow
+    version: latest
+  - id: tdd-guide
+    version: latest
+  - id: adversarial-reviewer
+    version: latest

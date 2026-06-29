@@ -25,7 +25,8 @@ An agent is a dynamically assembled context. Fondament defines the static primit
 13. [Error Types](#error-types)
 14. [Testing](#testing)
 15. [Key Dependencies](#key-dependencies)
-16. [Out of Scope (v1)](#out-of-scope-v1)
+16. [Attribution](#attribution)
+17. [Out of Scope (v1)](#out-of-scope-v1)
 
 ---
 
@@ -892,6 +893,106 @@ curl http://fondament:7800/component-agents
 curl http://fondament:7800/resolve/fondament/farga-agent
 curl http://fondament:7800/resolve/fondament/app-architect+deconstructive
 ```
+
+---
+
+## Attribution
+
+Some role and skill definitions in `definitions/fondament/` draw on patterns, structures,
+and externally published skills from the following open sources. Where a definition file
+uses an external skill or was shaped by an external pattern, it carries an attribution
+comment at the top of the YAML file.
+
+### VoltAgent — awesome-agent-skills
+
+**Repository**: https://github.com/VoltAgent/awesome-agent-skills  
+**License**: MIT  
+**What we use**: External Claude Code skills referenced in `skills:` lists on role
+definitions. These skills are invokable by Claude Code agents at runtime; listing them
+in a role's `skills:` array is both a capability grant and a qualification signal.
+
+| Skill ID | Used in | Credit |
+|---|---|---|
+| `hashicorp/terraform-style-guide` | `infra-engineer` | HashiCorp |
+| `hashicorp/terraform-test` | `infra-engineer` | HashiCorp |
+| `hashicorp/terraform-stacks` | `infra-engineer` | HashiCorp |
+| `hashicorp/refactor-module` | `infra-engineer` | HashiCorp |
+| `hashicorp/run-acceptance-tests` | `infra-engineer` | HashiCorp |
+| `trailofbits/static-analysis` | `security-analyst` | Trail of Bits |
+| `trailofbits/insecure-defaults` | `security-analyst` | Trail of Bits |
+| `trailofbits/semgrep-rule-creator` | `security-analyst` | Trail of Bits |
+| `trailofbits/audit-context-building` | `security-analyst` | Trail of Bits |
+| `trailofbits/property-based-testing` | `security-analyst` | Trail of Bits |
+| `trailofbits/spec-to-code-compliance` | `security-analyst` | Trail of Bits |
+| `microsoft/cloud-solution-architect` | `azure-architect` | Microsoft |
+| `getsentry/sentry-code-review` | `code-reviewer` | Sentry |
+| `getsentry/sentry-pr-code-review` | `code-reviewer` | Sentry |
+| `anthropics/docx` | `technical-writer` | Anthropic |
+| `anthropics/pdf` | `technical-writer` | Anthropic |
+| `anthropics/canvas-design` | `technical-writer` | Anthropic |
+| `googleworkspace/gws-docs` | `technical-writer` | Google |
+| `googleworkspace/gws-drive` | `technical-writer` | Google |
+| `openai/notion-research-documentation` | `technical-writer`, `librarian` | OpenAI |
+
+### agency-agents (msitarzewski)
+
+**Repository**: https://github.com/msitarzewski/agency-agents  
+**What we use**: Role taxonomy and agent structure patterns. The 232-agent roster across
+16 divisions informed our scope decisions (which roles to define, which to deliberately
+collapse, which to defer) and the internal structure of role `context:` fields (Identity +
+Mission + Critical Rules + Deliverables + Workflow).
+
+Definitions informed by agency-agents patterns:
+- `cloud-architect` — Cloud Security Architect and Software Architect structures
+- `aws-architect` — Cloud Security Architect IAM and blast-radius weighting
+- `azure-architect` — Cloud Security Architect review format
+- `gcp-architect` — Cloud Security Architect IAM and posture sections
+- `security-analyst` — Application Security Engineer and Threat Detection Engineer scope definitions; deliberate collapse from 10 security roles to one with documented split path
+- `infra-engineer` — DevOps Automator and SRE operational mindset sections
+- `technical-writer` — Technical Writer and Document Generator role structures (output format hierarchy, synthesis sections)
+- `business-analyst` — Feedback Synthesizer and Product Manager role structures
+- `developer` — Senior Backend Engineer and Senior Fullstack role structures
+- `qa-engineer` — Senior QA and Evidence Collector role structures
+
+### alirezarezvani — claude-skills
+
+**Repository**: https://github.com/alirezarezvani/claude-skills  
+**License**: see repository  
+**What we use**: 345+ production-ready Claude Code skills across 17 domains. Skill IDs are plain kebab-case (no org prefix). Install via `claude install engineering-skills` or `claude install engineering-advanced-skills` for the relevant bundles.
+
+| Skill ID | Used in | What it covers |
+|---|---|---|
+| `aws-solution-architect` | `aws-architect` | Serverless patterns, CloudFormation/CDK/Terraform, cost |
+| `azure-cloud-architect` | `azure-architect` | AKS, Bicep/ARM, Azure DevOps, compliance |
+| `gcp-cloud-architect` | `gcp-architect` | Cloud Run, GKE, BigQuery, Vertex AI, Terraform |
+| `cloud-security` | `cloud-architect` (base) | CSPM: IAM escalation paths, S3 exposure, security group rules, IaC misconfiguration |
+| `senior-devops` | `infra-engineer` | CI/CD pipeline generation, Terraform scaffolding, Kubernetes manifests |
+| `observability-designer` | `infra-engineer` | Dashboards, alert-noise reduction, three pillars, SLI scaffold |
+| `slo-architect` | `infra-engineer` | Full SLO/SLI/error-budget, burn-rate thresholds (Google SRE methodology) |
+| `chaos-engineering` | `infra-engineer` | Experiment design, blast-radius calculation, abort criteria, game days |
+| `kubernetes-operator` | `infra-engineer` | Operator patterns, CRD design, controller reconciliation |
+| `ci-cd-pipeline-builder` | `infra-engineer` | Pipeline scaffolding, deployment strategies, artifact management |
+| `senior-backend` | `developer` | REST API design, OpenAPI scaffolding, DB migration, load testing, security basics |
+| `spec-driven-workflow` | `developer` | Spec-first delivery: requirements → 9-section spec → test stubs → implementation |
+| `tdd-guide` | `developer`, `qa-engineer` | Red-green-refactor cycles, Jest/Pytest/JUnit/Vitest/Mocha; apply methodology to Rust |
+| `adversarial-reviewer` | `developer`, `code-reviewer` | Three hostile personas (Saboteur/New Hire/Security Auditor); BLOCK/CONCERNS/CLEAN verdict |
+| `senior-qa` | `qa-engineer` | Test generation, coverage analysis, Playwright E2E scaffolding (React/Next.js focused) |
+| `api-test-suite-builder` | `qa-engineer` | API test suites: auth scenarios, input validation, HTTP errors, rate limiting |
+| `performance-profiler` | `qa-engineer` | CPU/memory profiling, load testing (k6/Artillery), before/after baselines |
+| `product-manager-toolkit` | `business-analyst` | RICE prioritization, customer interview analysis, PRD templates, MoSCoW/Kano/OST |
+| `product-discovery` | `business-analyst` | OST facilitation, assumption mapping, problem/solution validation, discovery sprints |
+| `process-mapper` | `business-analyst` | Swim-lane process maps, bottleneck ranking (ToC), cycle-time analysis (P50/P90) |
+| `knowledge-ops` | `technical-writer`, `librarian` | KB health analysis: orphan pages, staleness scoring, ownership gaps, glossary drift |
+| `runbook-generator` | `technical-writer` | Operational runbook scaffolding: deployment, incident response, maintenance, rollback |
+
+Note: `cloud-security` covers cloud posture (control-plane level: IAM, storage, network, IaC configs), not code-level analysis. It lives on `cloud-architect` rather than `security-analyst` — those are different scopes.
+
+### kyrolabs — awesome-agents
+
+**Repository**: https://github.com/kyrolabs/awesome-agents  
+**What we use**: Framework and implementation survey. Validated our agent primitive taxonomy
+against the industry (MetaGPT's Architect+Engineer+QA decomposition, Stakpak for infra-engineer,
+SWE-Agent for story-execution analogue, Cordum for Gardian's governance scope).
 
 ---
 

@@ -92,19 +92,58 @@ modifiers:
   - deconstructive
 tools:
   always_on:
-    - mcp__farga__write_signal
-    - mcp__farga__read_context
-    - mcp__farga__write_artifact
-    - mcp__farga__search_signals
-    - mcp__farga__list_projects
-    - mcp__farga__update_component_todo
-    - mcp__dispatcher__invoke_agent
-    - mcp__dispatcher__get_agent_result
-    - mcp__dispatcher__list_agent_specs
-    - mcp__charradissa__matrix_send
-    - mcp__charradissa__matrix_invite
-    - mcp__charradissa__matrix_kick
-    - mcp__charradissa__matrix_get_dm
+    - id: farga-write-signal
+      kind: mcp
+      server: farga
+      tool: write_signal
+    - id: farga-read-context
+      kind: mcp
+      server: farga
+      tool: read_context
+    - id: farga-write-artifact
+      kind: mcp
+      server: farga
+      tool: write_artifact
+    - id: farga-search-signals
+      kind: mcp
+      server: farga
+      tool: search_signals
+    - id: farga-list-projects
+      kind: mcp
+      server: farga
+      tool: list_projects
+    - id: farga-update-component-todo
+      kind: mcp
+      server: farga
+      tool: update_component_todo
+    - id: dispatcher-invoke-agent
+      kind: mcp
+      server: dispatcher
+      tool: invoke_agent
+    - id: dispatcher-get-agent-result
+      kind: mcp
+      server: dispatcher
+      tool: get_agent_result
+    - id: dispatcher-list-agent-specs
+      kind: mcp
+      server: dispatcher
+      tool: list_agent_specs
+    - id: charradissa-matrix-send
+      kind: mcp
+      server: charradissa
+      tool: matrix_send
+    - id: charradissa-matrix-invite
+      kind: mcp
+      server: charradissa
+      tool: matrix_invite
+    - id: charradissa-matrix-kick
+      kind: mcp
+      server: charradissa
+      tool: matrix_kick
+    - id: charradissa-matrix-get-dm
+      kind: mcp
+      server: charradissa
+      tool: matrix_get_dm
   jit: []
 skills:
   - superpowers:brainstorming

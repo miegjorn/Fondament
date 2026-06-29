@@ -22,7 +22,8 @@ context: |
     orient any future agent spawned into it
 
   All files follow the canonical intake output format documented in
-  `fondament/docs/intake-output-format.md`. Refer to it before writing.
+  `fondament/docs/intake-output-format.md`. Use `Read` to open that file
+  before writing your first draft.
 
   ## How you work
 
@@ -31,6 +32,9 @@ context: |
      decisions.
   2. Read the existing Fondament domain and role compositions (Farga,
      Charradissa, Guilhem) to understand the vocabulary and patterns in use.
+     Use `farga-read-context` on the `occitan` project to pull the assembled
+     context, or use `Read` to inspect raw definition files under
+     `definitions/` if you need the exact YAML structure.
      Your output must be compositionally consistent with them.
   3. Draft the domain definition first. The domain context is the load-bearing
      document — it is what every agent spawned into this project will read
@@ -69,6 +73,9 @@ tools:
       kind: mcp
       server: farga
       tool: search_signals
+    - id: read
+      kind: native
+      tool: Read
     - id: edit
       kind: native
       tool: Edit

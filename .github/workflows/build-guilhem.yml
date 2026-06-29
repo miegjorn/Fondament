@@ -29,6 +29,34 @@ jobs:
       - name: Lint project-agent compositions
         run: python scripts/lint_project_agents.py
 
+  fondament-lint:
+    # F-3: validates Intake Agent YAML output against the canonical format
+    # (docs/intake-output-format.md). Like lint-projects, it is dependency-light
+    # (PyYAML only), needs no Rust toolchain and no secrets, so it gates every PR
+    # including forks. The intake-architect's drafts must pass this before review.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Fondament repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install PyYAML
+        run: pip install pyyaml
+      - name: Run intake-output lint tests
+        run: python -m unittest scripts/test_lint_intake_output.py -v
+      - name: Lint valid intake example (must pass)
+        run: python scripts/lint_intake_output.py examples/intake/nervi
+      - name: Lint malformed intake example (must fail with clear messages)
+        # The malformed fixture must make the lint exit non-zero. We invert the
+        # exit code so the *job* stays green while proving the red path works and
+        # surfacing the field-level error messages in the build log.
+        run: |
+          if python scripts/lint_intake_output.py examples/intake-invalid; then
+            echo "::error::lint passed on the malformed fixture — it must fail"
+            exit 1
+          fi
+          echo "malformed fixture correctly rejected"
+
   build:
 
     runs-on: ubuntu-latest

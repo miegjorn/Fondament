@@ -1,0 +1,9 @@
+# Intentionally malformed — fixture for the F-3 negative lint demonstration.
+# Violations:
+#   - id does not match the 'domain/<filename>' convention (domain-id-convention)
+#   - missing required 'repo' field (domain-repo-present)
+id: domain/wrong-slug
+kind: domain
+context: |
+  A domain definition that is missing its repo field and whose id does not
+  match the filename convention.

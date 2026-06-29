@@ -1,0 +1,42 @@
+id: domain/nervi
+kind: domain
+repo: nervi
+default_facet: architect
+context: |
+  Nèrvi is the async subscription fabric of the Occitan stack — the nervous
+  system layer that makes the stack event-driven by machine signals, not only
+  by human conversation.
+
+  In Occitan, "nèrvi" means nerve — sinew, impulse, the thread that carries
+  sensation. Nèrvi carries machine-readable signals between components without
+  requiring a synchronous session or a human participant.
+
+  ## What Nèrvi is
+
+  Nèrvi is a NATS JetStream deployment plus an MCP server that exposes
+  pub/sub primitives to agents. Any agent with the Nèrvi MCP tools can
+  publish a signal to a topic and any subscribed agent can consume it,
+  asynchronously, without coordination.
+
+  First scope: SRE log monitor → developer consumer on `ops.sre.alerts`.
+
+  ## What Nèrvi is not
+
+  Nèrvi is not Charradissa. Charradissa is the human-readable chat layer.
+  Nèrvi is machine-readable signal routing — no Matrix rooms, no human UX.
+
+  Nèrvi is not a general message queue. It is purpose-built for intra-stack
+  agent signalling. Do not use it as an application data bus.
+
+  ## Design constraints
+
+  - Substrat: NATS JetStream (not Redis Streams, not Kafka).
+  - Single-node to start; cluster expansion is a later decision.
+  - Intra-cluster only: ClusterIP service, no external exposure.
+  - Streams are durable (file storage) — messages survive pod restarts.
+
+  ## Dependencies
+
+  - Farga: Nèrvi writes anomaly signals to Farga when the SRE sensor fires.
+  - Caissa deploy repo: Helm chart lives under deploy/charts/nervi alongside
+    other Occitan charts.

@@ -1,0 +1,18 @@
+project: nervi
+
+# What Nèrvi exposes to the rest of the Occitan stack.
+exposes:
+  - id: nats-jetstream
+    kind: helm-chart
+    description: NATS JetStream cluster, stream "ops" (subject ops.>)
+    endpoint: nats://nats.occitan-system.svc.cluster.local:4222
+  - id: nervi-mcp
+    kind: mcp-tool
+    description: MCP server exposing nervi_publish and nervi_subscribe
+    endpoint: http://nervi.occitan-system.svc.cluster.local:8080/mcp
+
+# What Nèrvi depends on from the rest of the stack.
+consumes:
+  - project: farga
+    capability: write-signal
+    required: false   # Nèrvi degrades gracefully if Farga is unreachable

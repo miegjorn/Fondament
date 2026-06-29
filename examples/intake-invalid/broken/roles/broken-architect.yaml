@@ -1,0 +1,15 @@
+# Intentionally malformed — fixture for the F-3 negative lint demonstration.
+# Violations:
+#   - default_model is not a known Claude model id (role-default-model-valid)
+#   - mcp tool entry is missing its 'tool' field (role-tool-fields)
+id: fondament/broken-architect
+kind: role
+default_model: gpt-4-turbo
+context: |
+  A role with an invalid model id and a malformed tool entry.
+tools:
+  always_on:
+    - id: farga-read-context
+      kind: mcp
+      server: farga
+  jit: []

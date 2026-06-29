@@ -586,6 +586,50 @@ prebuilt binary is republished).
 Bosa Properties stack. Run it locally with `python scripts/lint_project_agents.py`
 and the test suite with `python -m unittest scripts/test_lint_project_agents.py`.
 
+### Intake-Output CI Lint (`scripts/lint_intake_output.py`)
+
+A second dependency-light gate (the `fondament-lint` job in `build-guilhem.yml`,
+**F-3**) that validates the YAML bundle produced by the `intake-architect` agent
+against the [canonical output format](docs/intake-output-format.md). The intent is
+to fail explicitly on malformed drafts *before* human review, with messages that
+name the offending field and the constraint it broke. It needs only PyYAML and no
+Rust toolchain, so it runs on every PR including forks.
+
+An intake bundle is a directory shaped like the canonical format —
+`domains/<slug>.yaml`, `roles/<role>.yaml`, `capabilities.yaml`, `README.md`. Each
+YAML file is dispatched by its `kind` field (`domain` / `role`); a file named
+`capabilities.yaml` is validated as a capabilities contract.
+
+| Rule | Kind | Description |
+|---|---|---|
+| `yaml-parse` | Fail | File must be valid YAML with a top-level mapping. |
+| `unknown-kind` | Fail | A YAML file that is neither `kind: domain`, `kind: role`, nor a `capabilities.yaml`. |
+| `domain-kind` / `domain-id-present` / `domain-id-convention` | Fail | Domain `kind` must be `domain`; `id` present and equal to `domain/<filename>`. |
+| `domain-repo-present` / `domain-context-present` | Fail | Domain `repo` and `context` must be present and non-empty. |
+| `role-kind` / `role-id-present` / `role-id-convention` | Fail | Role `kind` must be `role`; `id` present and equal to `fondament/<filename>`. |
+| `role-default-model-valid` | Fail | Role `default_model` must be one of the four known Claude model ids. |
+| `role-context-present` | Fail | Role `context` must be present and non-empty. |
+| `role-tools-present` / `role-tool-fields` / `role-jit-list` | Fail | `tools.always_on` must be a non-empty list; each tool needs `id`+`kind` (mcp→`server`+`tool`, native→`tool`); `tools.jit` must be a list. |
+| `capabilities-project-present` | Fail | `capabilities.yaml` must carry a non-empty `project`. |
+| `capabilities-exposes-*` / `capabilities-consumes-*` | Fail | Each `exposes` entry needs `id`/`kind`/`description` with a known capability kind; each `consumes` entry needs `project`/`capability`. |
+| `capabilities-required-bool` | Warn | `consumes` `required` should be a boolean. |
+
+The valid bundle under `examples/intake/nervi/` is linted green in CI; the
+deliberately malformed bundle under `examples/intake-invalid/` is asserted to fail
+(its field-level messages appear in the build log). The id conventions are derived
+from the filename rather than hardcoded, so the rules apply unchanged to the Bosa
+Properties stack. Run it locally with:
+
+```sh
+python scripts/lint_intake_output.py generated/<project-slug>   # validate a draft bundle
+python scripts/lint_intake_output.py examples/intake/nervi      # validate the worked example
+python -m unittest scripts/test_lint_intake_output.py           # run the acceptance tests
+```
+
+With no argument the script defaults to the `generated/` intake staging directory;
+a missing directory reports zero files checked and exits 0, keeping the gate quiet
+until intake output lands.
+
 ### Sweep Lint (`lint::sweep`)
 
 LLM-assisted semantic analysis intended to run on a schedule. The `lint::sweep::run_sweep` library function itself remains a stub returning an empty `SweepReport` (see below). A separate, independently implemented `fondament sweep` CLI command (`fondament-cli/src/commands/sweep.rs`) exists and is functional today — it calls the Anthropic API directly (per-definition, not via `run_sweep`/`SweepReport`) to assess whether each definition's `context` matches its declared `kind`/`id`. See [`fondament sweep`](#fondament-sweep-path) below. The two are not yet unified; the structured `SweepConflict`/`ConvergenceOpportunity` checks described next are still aspirational. The sweep checks for:

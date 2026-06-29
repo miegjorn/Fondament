@@ -13,3 +13,6 @@ pub mod watcher;
 
 pub use types::ComposedPart;
 pub use types::PartKind;
+pub use definition::SkillRules;
+pub use definition::DispatcherSkillRules;
+pub use definition::InvokeAgentSkillRules;

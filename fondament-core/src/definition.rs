@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use crate::tools::ToolSet;
 use crate::types::ModelId;
 
@@ -24,6 +25,29 @@ impl SkillRef {
             Self::Versioned { version, .. } => version,
         }
     }
+}
+
+/// Rules that govern dispatcher and prompt constraints for a skill.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SkillRules {
+    #[serde(default)]
+    pub dispatcher: Option<DispatcherSkillRules>,
+    pub prompt_constraint: Option<String>,
+}
+
+/// Dispatcher-level rules embedded in a skill definition.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DispatcherSkillRules {
+    pub invoke_agent: Option<InvokeAgentSkillRules>,
+}
+
+/// Fine-grained constraints on `invoke_agent` calls.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct InvokeAgentSkillRules {
+    pub caller_identity: Option<String>,
+    pub allowed_facets: Option<Vec<String>>,
+    #[serde(default)]
+    pub domain_must_match_caller: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +77,12 @@ pub struct DefinitionFile {
     pub parts: Vec<serde_yaml::Value>,
     #[serde(default)]
     pub skills: Vec<SkillRef>,
+    /// Per-trigger model assignments (e.g. chronicle, matrix, dream, dispatch).
+    #[serde(default)]
+    pub models: HashMap<String, String>,
+    /// Declarative rules injected from skill definitions (dispatcher scope, prompt constraints).
+    #[serde(default)]
+    pub rules: Option<SkillRules>,
 }
 
 impl DefinitionFile {

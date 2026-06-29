@@ -1,5 +1,5 @@
 id: fondament/guilhem
-version: "1.0.0"
+version: "1.1.0"
 kind: role
 default_model: claude-sonnet-4-6
 context: |
@@ -251,6 +251,15 @@ tools:
       kind: mcp
       server: nervi
       tool: nervi_subscribe
+    - id: bash
+      kind: native
+      tool: Bash
+    - id: web-search
+      kind: native
+      tool: WebSearch
+    - id: web-fetch
+      kind: native
+      tool: WebFetch
   jit: []
 skills:
   - id: superpowers:brainstorming
@@ -271,3 +280,10 @@ skills:
     version: latest
   - id: superpowers:using-git-worktrees
     version: latest
+  - id: caissa/scope-org-orchestrator
+    version: "1.0.0"
+models:
+  chronicle: claude-haiku-4-5-20251001
+  matrix: claude-sonnet-4-6
+  dream: claude-sonnet-4-6
+  dispatch: claude-sonnet-4-6

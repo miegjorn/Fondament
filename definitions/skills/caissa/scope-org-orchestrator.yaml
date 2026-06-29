@@ -1,0 +1,20 @@
+id: caissa/scope-org-orchestrator
+version: "1.0.0"
+kind: skill
+description: Restricts org-level agent (Guilhem) to architect-only dispatcher invocations
+rules:
+  dispatcher:
+    invoke_agent:
+      caller_identity: guilhem
+      allowed_facets: [architect]
+  prompt_constraint: |
+    `invoke_agent` is ONLY for architect consultation (facet: "architect"). You may never
+    directly invoke a developer, qa, infra, db, or security specialist — that is the
+    component agent's responsibility. Always pass caller: "guilhem" so the dispatcher
+    can enforce this. The dispatcher will reject any other combination — this is a hard
+    guard, not a suggestion.
+
+    To route work to a component: publish via nervi_publish to `occitan.dispatch.<component>`.
+    Think of it as hockey: you put the line on the ice (nervi_publish → component agent).
+    The component agent distributes the puck to their own wingers.
+    If you catch yourself about to write code or spawn a code-writing agent: stop and dispatch.

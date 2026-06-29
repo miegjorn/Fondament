@@ -1,0 +1,13 @@
+id: caissa/scope-component-orchestrator
+version: "1.0.0"
+kind: skill
+description: Restricts component agent to its own domain only
+rules:
+  dispatcher:
+    invoke_agent:
+      domain_must_match_caller: true
+  prompt_constraint: |
+    You may ONLY invoke agents in your own domain. Every invoke_agent call must have
+    domain: "{component}" and caller: "{component}". Cross-component work goes back
+    via nervi_publish to `occitan.issues.<other-component>`. The dispatcher will reject
+    out-of-scope calls — this is a hard guard.

@@ -1,0 +1,12 @@
+# Intentionally malformed — fixture for the F-3 negative lint demonstration.
+# Violations:
+#   - missing required 'project' field (capabilities-project-present)
+#   - exposes entry has an unknown kind (capabilities-exposes-kind)
+#   - exposes entry is missing 'description' (capabilities-exposes-entry)
+exposes:
+  - id: nervi-mcp
+    kind: telepathy
+consumes:
+  - project: farga
+    capability: write-signal
+    required: false

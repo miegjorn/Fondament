@@ -3,7 +3,7 @@ WORKDIR /build
 COPY . .
 RUN cargo build --release --bin fondament-server
 
-FROM debian:bookworm-slim
+FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /build/target/release/fondament-server /usr/local/bin/fondament-server
 COPY definitions /fondament/definitions

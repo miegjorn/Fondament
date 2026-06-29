@@ -1,0 +1,16 @@
+project: nervi
+
+exposes:
+  - id: nats-jetstream
+    kind: helm-chart
+    description: NATS JetStream cluster, stream "ops" (subject ops.>)
+    endpoint: nats://nats.occitan-system.svc.cluster.local:4222
+  - id: nervi-mcp
+    kind: mcp-tool
+    description: MCP server exposing nervi_publish and nervi_subscribe
+    endpoint: http://nervi.occitan-system.svc.cluster.local:8080/mcp
+
+consumes:
+  - project: farga
+    capability: write-signal
+    required: false   # Nèrvi degrades gracefully if Farga is unreachable

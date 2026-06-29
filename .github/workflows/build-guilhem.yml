@@ -29,6 +29,24 @@ jobs:
       - name: Lint project-agent compositions
         run: python scripts/lint_project_agents.py
 
+  fondament-lint:
+    # Validates YAML files produced by the Intake Agent (F-3).
+    # Checks every project directory under generated/ against the
+    # intake-output schema: domain.yaml, roles/*.yaml, capabilities.yaml.
+    # No Rust toolchain required — runs on every PR including forks.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install PyYAML
+        run: pip install pyyaml
+      - name: Run intake-output lint tests
+        run: python -m unittest scripts/test_lint_intake_output.py -v
+      - name: Lint intake output
+        run: python scripts/lint_intake_output.py
+
   build:
 
     runs-on: ubuntu-latest

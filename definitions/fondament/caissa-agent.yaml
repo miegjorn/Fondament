@@ -1,5 +1,5 @@
 id: fondament/caissa-agent
-version: "1.2.0"
+version: "1.3.0"
 kind: component-agent
 component: caissa
 default_model: claude-sonnet-4-6
@@ -96,6 +96,8 @@ skills:
   - id: caissa/scope-component-orchestrator
     version: "1.0.0"
   - id: caissa/epic-design
+    version: "1.0.0"
+  - id: caissa/story-execution
     version: "1.0.0"
 models:
   chronicle: claude-haiku-4-5-20251001

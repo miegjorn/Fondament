@@ -1,0 +1,216 @@
+id: caissa/story-execution
+version: "1.0.0"
+kind: skill
+description: |
+  When a component agent dispatches a story to implementation: determine the execution
+  group from task labels, open a Matrix coordination room via Amassada, signal Nervi
+  that work is in progress, deliver (PR merged + tests green + deployed), review,
+  merge, close. Signal Nervi on every state transition so Guilhem has live status.
+
+rules:
+  prompt_constraint: |
+    ## STORY EXECUTION — from ticket to deployed
+
+    Use this process when a story is ready for implementation (subtasks defined,
+    acceptance criteria written, DoD includes test coverage and security pass).
+
+    This skill covers the full delivery arc: spawn → coordinate → deliver → review →
+    close. It ends when the story is merged, deployed, and the ticket is closed.
+
+    ---
+
+    ### Step 1 — Read the story and determine the execution group
+
+    Read the story and all its subtasks. Look at the facet labels:
+    - `developer` → spawn a component developer agent
+    - `qa` → spawn a component QA agent
+    - `devops` or `infra` → spawn a component devops agent
+    - `security` → spawn a component security agent
+
+    Spawn only what the tasks actually require. A pure refactor might be `developer`
+    only. A new API endpoint is typically `developer` + `qa`. Infrastructure work
+    might be `devops` + `security`. Determine this from the tasks, not from a fixed
+    template.
+
+    ### Step 2 — Signal in_progress immediately
+
+    Before spawning anything, update the ticket and signal Nervi:
+
+    ```bash
+    gh issue edit <story_number> --add-label "in-progress"
+    ```
+
+    ```json
+    nervi_publish(subject: "occitan.status", payload: {
+      "type": "status-update",
+      "level": "story",
+      "component": "<component>",
+      "ticket": <story_number>,
+      "title": "<story title>",
+      "status": "in_progress",
+      "epic": <parent_epic_number>
+    })
+    ```
+
+    Guilhem reads `occitan.status` in his chronicle cycle. Do this before any
+    implementation work starts — the status must be accurate from the first moment.
+
+    ### Step 3 — Open the execution room via Amassada
+
+    Publish to `occitan.dispatch.amassada` via nervi_publish:
+
+    ```json
+    {
+      "type": "execution-session",
+      "story": <story_number>,
+      "component": "<component>",
+      "session_id": "<generate: exec-<component>-<story_number>-<date>>",
+      "members": ["<facet1>", "<facet2>"],
+      "tdd": true,
+      "initiator": "<component>"
+    }
+    ```
+
+    Amassada creates a Matrix room (e.g. `#exec-<component>-<story>:occitane.guilhem`),
+    invites all members and you (the component agent) as observer. You join but do not
+    direct — the specialists self-coordinate in the room.
+
+    ### Step 4 — TDD is not optional
+
+    The first work item in every execution session is tests. Always.
+
+    Before any implementation task starts: the QA agent (or the developer if QA is not
+    in the group) writes the failing tests that define the acceptance criteria. These
+    tests are committed and pushed. CI must show them failing (red) before any
+    implementation code is written.
+
+    This is enforced by the session structure: Amassada does not unblock implementation
+    tasks until the test commit exists. If a specialist tries to skip this step, surface
+    it and block the session until tests are written.
+
+    Subtask order for every story:
+    1. Write failing tests (qa or developer)
+    2. Implement to make tests pass (developer)
+    3. Security review of the implementation (security agent, if in group)
+    4. Devops/infra changes if required (devops agent)
+    5. All CI checks green
+
+    ### Step 5 — Coordinate via the Matrix room
+
+    Dependencies between tasks are handled in the room. The pattern:
+    - When a task is complete: the specialist posts a summary in the room and tags
+      the next dependent specialist
+    - If a specialist is blocked: they post the blocker in the room; you (component
+      agent) resolve or escalate
+    - You monitor the room but do not micro-manage — intervene only when blocked
+
+    The room is the coordination surface. Farga is the durable record.
+    Write a signal to Farga at each significant milestone:
+    ```
+    write_signal(project: "<component>", source: "story-execution",
+                 content: "Story #<N>: <milestone reached>")
+    ```
+
+    ### Step 6 — Code review and merge
+
+    When all tasks are done and CI is green, the PR is ready for review.
+
+    Default: you (the component agent) do the review.
+    - Read the diff
+    - Verify tests are present and meaningful (not just `assert True`)
+    - Verify acceptance criteria from the story body are demonstrably met
+    - Check the security surface if a security agent was not in the group
+
+    Delegation (your prerogative): if the change is in an area you are less
+    familiar with, or if you want an independent eye:
+    ```json
+    nervi_publish(subject: "occitan.dispatch.reviewer", payload: {
+      "type": "review-request",
+      "pr": <pr_number>,
+      "story": <story_number>,
+      "component": "<component>",
+      "context": "<what to pay attention to>"
+    })
+    ```
+    The component-reviewer picks this up and posts their review. You retain final
+    approval authority — the reviewer advises, you decide.
+
+    When satisfied: approve and merge.
+
+    ### Step 7 — Verify deployment
+
+    After merge, CI runs the deployment pipeline. Wait for it to complete.
+    Verify the change is live (health check, smoke test, or equivalent).
+
+    Delivery is not done until it is running. A merged PR that failed to deploy
+    is a broken story, not a closed one.
+
+    ### Step 8 — Close the story and signal completion
+
+    ```bash
+    gh issue close <story_number> --comment "Delivered: PR #<pr> merged, deployed, tests green."
+    ```
+
+    Signal Nervi:
+    ```json
+    nervi_publish(subject: "occitan.status", payload: {
+      "type": "status-update",
+      "level": "story",
+      "component": "<component>",
+      "ticket": <story_number>,
+      "title": "<story title>",
+      "status": "closed",
+      "pr": <pr_number>,
+      "epic": <parent_epic_number>
+    })
+    ```
+
+    Write to Farga:
+    ```
+    write_signal(project: "<component>", source: "story-execution",
+                 content: "Story #<N> closed. PR #<pr> merged and deployed.")
+    ```
+
+    ### Step 9 — Check Epic completion
+
+    After closing the story, check whether all stories for the parent Epic are now closed:
+
+    ```bash
+    gh issue list --label "story" --search "Epic: #<epic_number> in:body" --state open
+    ```
+
+    If no open stories remain:
+    ```bash
+    gh issue close <epic_number> --comment "All stories delivered and deployed."
+    ```
+
+    Signal Nervi:
+    ```json
+    nervi_publish(subject: "occitan.status", payload: {
+      "type": "status-update",
+      "level": "epic",
+      "component": "<component>",
+      "ticket": <epic_number>,
+      "status": "closed"
+    })
+    ```
+
+    Guilhem monitors `occitan.status` and will close the initiative when all Epics
+    are done. You do not need to notify him directly — the signal is enough.
+
+    ---
+
+    ### Definition of Done (non-negotiable)
+
+    A story is done when ALL of the following are true:
+    - [ ] Failing tests written and committed before implementation started
+    - [ ] All tests pass in CI (no skips, no flaky workarounds)
+    - [ ] PR reviewed (by component agent or component-reviewer)
+    - [ ] PR merged to main
+    - [ ] Deployment pipeline succeeded
+    - [ ] Feature is live and verifiable
+    - [ ] GitHub story issue is closed
+    - [ ] Nervi `occitan.status` signal sent
+    - [ ] Farga signal written
+
+    If any item is missing, the story is not done.

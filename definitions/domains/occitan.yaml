@@ -1,4 +1,5 @@
 id: domain/occitan
+version: "1.0.0"
 kind: domain
 context: |
   The Occitan stack is a self-referential multi-agent development platform.

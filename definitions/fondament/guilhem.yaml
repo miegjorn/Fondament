@@ -1,4 +1,5 @@
 id: fondament/guilhem
+version: "1.0.0"
 kind: role
 default_model: claude-sonnet-4-6
 context: |
@@ -203,6 +204,9 @@ tools:
       kind: mcp
       server: dispatcher
       tool: invoke_agent
+      constraints:
+        caller: guilhem
+        allowed_facets: [architect]
     - id: dispatcher-get-agent-result
       kind: mcp
       server: dispatcher
@@ -249,12 +253,21 @@ tools:
       tool: nervi_subscribe
   jit: []
 skills:
-  - superpowers:brainstorming
-  - superpowers:writing-plans
-  - superpowers:subagent-driven-development
-  - superpowers:test-driven-development
-  - superpowers:systematic-debugging
-  - superpowers:requesting-code-review
-  - superpowers:finishing-a-development-branch
-  - superpowers:verification-before-completion
-  - superpowers:using-git-worktrees
+  - id: superpowers:brainstorming
+    version: latest
+  - id: superpowers:writing-plans
+    version: latest
+  - id: superpowers:subagent-driven-development
+    version: latest
+  - id: superpowers:test-driven-development
+    version: latest
+  - id: superpowers:systematic-debugging
+    version: latest
+  - id: superpowers:requesting-code-review
+    version: latest
+  - id: superpowers:finishing-a-development-branch
+    version: latest
+  - id: superpowers:verification-before-completion
+    version: latest
+  - id: superpowers:using-git-worktrees
+    version: latest

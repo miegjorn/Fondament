@@ -1,4 +1,5 @@
 id: domain/fondament
+version: "1.0.0"
 kind: domain
 repo: Fondament
 default_facet: architect

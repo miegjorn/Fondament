@@ -1,4 +1,5 @@
 id: domain/cor
+version: "1.0.0"
 kind: domain
 repo: Cor
 default_facet: developer

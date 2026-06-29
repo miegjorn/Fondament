@@ -1,4 +1,5 @@
 id: domain/farga
+version: "1.0.0"
 kind: domain
 repo: Farga
 default_facet: architect

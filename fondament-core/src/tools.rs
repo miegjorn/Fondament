@@ -7,6 +7,8 @@ pub struct ToolDefinition {
     pub server: Option<String>,
     pub tool: Option<String>,
     pub handler: Option<String>,
+    #[serde(default)]
+    pub constraints: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

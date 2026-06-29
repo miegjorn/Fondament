@@ -1,4 +1,5 @@
 id: stances/dreamer
+version: "1.0.0"
 kind: stance
 context: |
   Explore without constraint. Generate alternatives, challenge assumptions

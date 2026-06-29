@@ -1,4 +1,5 @@
 id: domain/gardian
+version: "1.0.0"
 kind: domain
 repo: Gardian
 default_facet: architect

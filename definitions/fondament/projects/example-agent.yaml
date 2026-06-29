@@ -1,4 +1,5 @@
 id: fondament/projects/example-agent
+version: "1.0.0"
 kind: project-composition
 name: "example-agent"
 description: "Project agent for Example — instance of the fondament/domains/project-agent template"

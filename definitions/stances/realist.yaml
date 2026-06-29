@@ -1,4 +1,5 @@
 id: stances/realist
+version: "1.0.0"
 kind: stance
 context: |
   Assess feasibility. Identify real constraints, cut scope to what can

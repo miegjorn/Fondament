@@ -1,4 +1,5 @@
 id: domain/charradissa
+version: "1.0.0"
 kind: domain
 repo: Charradissa
 default_facet: architect

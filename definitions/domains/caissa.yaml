@@ -1,4 +1,5 @@
 id: domain/caissa
+version: "1.0.0"
 kind: domain
 repo: Caissa
 default_facet: architect

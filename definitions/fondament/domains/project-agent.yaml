@@ -1,4 +1,5 @@
 id: fondament/domains/project-agent
+version: "1.0.0"
 kind: project-agent
 default_model: claude-opus-4-8
 context: |

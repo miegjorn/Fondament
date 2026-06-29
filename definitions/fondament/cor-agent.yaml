@@ -1,4 +1,5 @@
 id: fondament/cor-agent
+version: "1.0.0"
 kind: component-agent
 component: cor
 default_model: claude-sonnet-4-6

@@ -1,4 +1,5 @@
 id: fondament/nervi-agent
+version: "1.0.0"
 kind: component-agent
 component: nervi
 default_model: claude-sonnet-4-6

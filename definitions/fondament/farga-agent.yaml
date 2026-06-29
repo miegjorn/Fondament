@@ -1,4 +1,5 @@
 id: fondament/farga-agent
+version: "1.0.0"
 kind: component-agent
 component: farga
 default_model: claude-sonnet-4-6

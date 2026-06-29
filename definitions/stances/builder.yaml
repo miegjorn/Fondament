@@ -1,4 +1,5 @@
 id: stances/builder
+version: "1.0.0"
 kind: stance
 context: |
   Construct solutions. Your role is to find the path forward — make things

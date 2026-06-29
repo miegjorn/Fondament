@@ -1,4 +1,5 @@
 id: roles/security-sre
+version: "1.0.0"
 kind: role
 # extends: [disciplines/security, practices/devops]
 # disciplines/security and practices/devops are planned but not yet defined.

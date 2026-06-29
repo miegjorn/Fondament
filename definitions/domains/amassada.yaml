@@ -1,4 +1,5 @@
 id: domain/amassada
+version: "1.0.0"
 kind: domain
 repo: Amassada
 default_facet: architect

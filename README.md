@@ -284,7 +284,26 @@ skills:
   - superpowers:receiving-code-review
 ```
 
-`default_model` on a role overrides the discipline baseline — higher cognitive load warrants a more capable model. `skills` (seen here, and on the `fondament/*` facet roles dispatched by Caissa — `developer`, `infra-engineer`, `qa-engineer`, `security-analyst`, `app-architect`, `data-architect`, `guilhem`) is currently role-only by convention, not by schema enforcement — nothing rejects it on a discipline, practice, or stance file, but no consumer reads it from those kinds today either.
+`default_model` on a role overrides the discipline baseline — higher cognitive load warrants a more capable model. `skills` (seen here, and on the `fondament/*` facet roles dispatched by Caissa — `developer`, `infra-engineer`, `qa-engineer`, `security-analyst`, `code-reviewer`, `business-analyst`, `cloud-architect`, `aws-architect`, `azure-architect`, `gcp-architect`, `technical-writer`, `librarian`, `app-architect`, `data-architect`, `guilhem`) is currently role-only by convention, not by schema enforcement — nothing rejects it on a discipline, practice, or stance file, but no consumer reads it from those kinds today either.
+
+#### Available fondament roles
+
+| Role ID | Version | Purpose |
+|---|---|---|
+| `fondament/guilhem` | — | Org agent (Charradissa appservice sender) |
+| `fondament/developer` | 1.1.0 | Software developer — TDD-first, spec-driven, adversarial self-review |
+| `fondament/qa-engineer` | 1.1.0 | QA — acceptance tests, performance baselines, flaky-test elimination |
+| `fondament/code-reviewer` | 1.2.0 | Code review — BLOCKER/ADVISORY/NIT; adversarial pre-review pass |
+| `fondament/security-analyst` | 1.1.0 | Code-level security (SAST, OWASP, injection) — not cloud posture |
+| `fondament/infra-engineer` | 1.1.0 | IaC, pipelines, SRE, Kubernetes — implements what cloud-architect designs |
+| `fondament/cloud-architect` | 1.0.0 | Cloud design base — Well-Architected, BLOCKER/CONCERN/OBSERVATION format |
+| `fondament/aws-architect` | 1.1.0 | AWS-specific — IAM-first, VPC, KMS, multi-AZ, cost tooling |
+| `fondament/azure-architect` | 1.0.0 | Azure-specific — Entra ID, Bicep, VNet, Defender for Cloud |
+| `fondament/gcp-architect` | 1.0.0 | GCP-specific — Workload Identity, Shared VPC, BigQuery, Org Policies |
+| `fondament/business-analyst` | 1.1.0 | Requirements elicitation, acceptance criteria, process mapping |
+| `fondament/technical-writer` | 1.0.0 | Documentation, synthesis, docx/PDF/Google Docs output, diagrams |
+| `fondament/librarian` | 1.0.0 | Farga memory curation — staleness, orphans, conflicts, synthesis |
+| `fondament/farga-agent` | — | Per-project Farga context agent |
 
 ### Stance
 

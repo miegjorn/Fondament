@@ -1,0 +1,103 @@
+id: caissa/initiative-design
+version: "1.0.0"
+kind: skill
+description: |
+  When Guilhem has a development initiative: run a structured Amassada design session
+  where the architect persona facilitates a brainstorm and Guilhem supplies the domain
+  knowledge. Outcome: design document in Farga + one GitHub Epic per affected component.
+
+rules:
+  prompt_constraint: |
+    ## INITIATIVE DESIGN — when you need to build something new
+
+    Use this process when an initiative, feature request, or architectural change is large
+    enough to span multiple components or require explicit design before dispatching.
+    Do not skip it to jump straight to Epics — undesigned Epics produce unscoped stories
+    that waste specialist time.
+
+    ### Step 1 — Frame the initiative
+
+    Write a clear brief before opening any session:
+    - **Problem**: what is broken, missing, or worth building, and why now
+    - **Outcome**: what success looks like and how you would know it is done
+    - **Scope**: what is explicitly out of scope for this initiative
+    - **Components**: which of the 8 stack components are likely affected
+
+    This brief is the session seed. The clearer it is, the more useful the architect's
+    questions will be.
+
+    ### Step 2 — Open an Amassada design session
+
+    Publish to `occitan.dispatch.amassada` via nervi_publish:
+
+    ```json
+    {
+      "type": "design-session",
+      "level": "initiative",
+      "persona": "architect",
+      "skill": "superpowers:brainstorming",
+      "brief": "<your initiative brief>",
+      "session_id": "<generate: initiative-<slug>-<date>>",
+      "initiator": "guilhem"
+    }
+    ```
+
+    Amassada will create a Matrix room, invite you, and run an architect Claude instance
+    that drives `superpowers:brainstorming` as the facilitator. You are the participant —
+    the domain expert who has the answers.
+
+    ### Step 3 — Participate honestly
+
+    The architect will ask questions. Your job:
+    - Answer from what you actually know, not from what sounds good
+    - Push back when a question is based on a wrong assumption
+    - Say "I don't know yet" when you don't — that becomes a design risk to track
+    - Drive toward a design you are genuinely confident dispatching from
+
+    Do not close the session early because the questions are uncomfortable.
+    The session exists to surface what you haven't thought through yet.
+
+    ### Step 4 — Validate the design before closing
+
+    Before signalling completion, confirm:
+    - Every affected component has a clear design section (what it must do, what changes)
+    - The design is unambiguous enough that a component agent can scope stories from it
+    - Cross-component dependencies are named and sequenced
+    - Open risks are listed explicitly (not silently dropped)
+
+    Signal completion in the Amassada session room. Amassada will produce the design
+    document and write it to Farga:
+    - project: "occitan", role: "design", key: "design/<session_id>"
+
+    Confirm the write completed before moving to decomposition.
+
+    ### Step 5 — Decompose into Epics
+
+    For each component in the design:
+
+    1. Create a GitHub Epic:
+       ```
+       gh issue create \
+         --title "[Epic] <Component>: <design area>" \
+         --label "epic,<component>" \
+         --body "<component design section>\n\n---\nFull design: farga:design/<session_id>"
+       ```
+
+    2. Publish to the component's dispatch channel:
+       ```json
+       {
+         "type": "epic-design",
+         "epic": <issue number>,
+         "session_id": "<original session_id>"
+       }
+       ```
+       via nervi_publish to `occitan.dispatch.<component>`
+
+    The component agent will pick this up and run caissa/epic-design to decompose the
+    Epic into stories. You do not own that step — dispatch and move on.
+
+    ### What this skill does NOT cover
+
+    - Dispatching story-level work to specialists (that is caissa/epic-design)
+    - Implementing anything (Guilhem does not write code)
+    - Approving stories or PRs (separate review step)

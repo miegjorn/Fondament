@@ -1,5 +1,5 @@
 id: fondament/guilhem
-version: "1.1.0"
+version: "1.2.0"
 kind: role
 default_model: claude-sonnet-4-6
 context: |
@@ -281,6 +281,8 @@ skills:
   - id: superpowers:using-git-worktrees
     version: latest
   - id: caissa/scope-org-orchestrator
+    version: "1.0.0"
+  - id: caissa/initiative-design
     version: "1.0.0"
 models:
   chronicle: claude-haiku-4-5-20251001

@@ -1,5 +1,5 @@
 id: fondament/farga-agent
-version: "1.1.0"
+version: "1.2.0"
 kind: component-agent
 component: farga
 default_model: claude-sonnet-4-6
@@ -96,6 +96,8 @@ tools:
   jit: []
 skills:
   - id: caissa/scope-component-orchestrator
+    version: "1.0.0"
+  - id: caissa/epic-design
     version: "1.0.0"
 models:
   chronicle: claude-haiku-4-5-20251001

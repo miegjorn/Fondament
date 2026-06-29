@@ -1,0 +1,109 @@
+id: caissa/epic-design
+version: "1.0.0"
+kind: skill
+description: |
+  When a component agent receives an Epic with a design brief: run a structured
+  Amassada session where the architect facilitates a brainstorm and the component
+  agent supplies component-level knowledge. Outcome: GitHub Stories (issues) with
+  full specs, ready for specialist dispatch.
+
+rules:
+  prompt_constraint: |
+    ## EPIC DESIGN — when your component receives an Epic
+
+    Use this process when you receive an Epic from Guilhem's initiative-design flow.
+    The Epic body contains a design brief for your component. Your job is to decompose
+    that brief into implementable stories — not to start implementing.
+
+    Do not create stories from the Epic directly without running this process.
+    Ad-hoc story creation from an unrefined brief produces vague acceptance criteria
+    and wasted specialist cycles.
+
+    ### Step 1 — Read and understand the Epic
+
+    Read the Epic body in full. Extract:
+    - The design section specific to your component
+    - Cross-component dependencies that will constrain your timeline
+    - Anything ambiguous, missing, or contradictory
+
+    If the design section is too thin to scope stories from: write a signal to Farga
+    (project: "occitan", source: "epic-design", content: "Epic #N: insufficient design
+    for <component> — requesting clarification") and publish a clarification request to
+    `occitan.issues.guilhem` before proceeding. Do not invent design that was not given.
+
+    ### Step 2 — Open an Amassada design session
+
+    Publish to `occitan.dispatch.amassada` via nervi_publish:
+
+    ```json
+    {
+      "type": "design-session",
+      "level": "epic",
+      "persona": "architect",
+      "skill": "superpowers:brainstorming",
+      "brief": "<Epic body design section for your component>",
+      "session_id": "<generate: epic-<component>-<epic_number>-<date>>",
+      "initiator": "<component>",
+      "epic": <epic number>
+    }
+    ```
+
+    The architect persona will facilitate the session. You are the participant —
+    the expert on your component's internals, constraints, and failure modes.
+
+    ### Step 3 — Participate from your component's perspective
+
+    The architect's questions are aimed at surfacing what needs to be true for the
+    Epic design to become implementable stories. Your job:
+    - Answer from your component's actual constraints, not from what is easy to build
+    - Flag when a proposed story would touch another component's territory
+    - Name the real dependencies (on other stories, on infrastructure, on external APIs)
+    - Say "this needs a spike first" when the unknowns are too large to spec directly
+
+    A story is ready to exist when a specialist (developer, QA, infra, security) could
+    pick it up without requiring another design conversation.
+
+    ### Step 4 — Validate before closing
+
+    Before signalling completion, confirm:
+    - Each story has: a clear action, an acceptance criterion, and explicit dependencies
+    - No story requires knowledge the specialist won't have in its issue body
+    - The story set is complete relative to the Epic — nothing dropped
+    - Ordering constraints between stories are captured (blocking links or labels)
+
+    Signal completion in the Amassada session room. Amassada will produce the story
+    breakdown document. Optionally write it to Farga:
+    - project: "<component>", role: "design", key: "epic-<epic_number>-stories"
+
+    ### Step 5 — Create GitHub Stories
+
+    For each story in the breakdown:
+
+    1. Create a GitHub Issue:
+       ```
+       gh issue create \
+         --title "[Story] <work item — be specific>" \
+         --label "story,<component>,<facet>" \
+         --body "<full spec>\n\n## Acceptance criteria\n<criteria>\n\n## Dependencies\n<list>\n\nEpic: #<epic_number>"
+       ```
+
+       `<facet>` label: use `developer`, `qa`, `infra`, `security`, or `db` if the
+       story clearly belongs to one facet. Leave it off if it crosses facets.
+
+    2. Link as sub-issue of the parent Epic (GitHub sub-issues or manual body link).
+
+    3. Write a signal to Farga:
+       ```
+       write_signal(project: "<component>", source: "epic-design",
+                    content: "Epic #<N> decomposed: <M> stories created — #<list>")
+       ```
+
+    ### What this skill does NOT cover
+
+    - Dispatching stories to specialists (invoke_agent is a separate step)
+    - Implementing anything (the component agent orchestrates, does not code)
+    - Reviewing PRs produced from these stories (separate review step)
+
+    This skill ends when the stories exist and are linked to the Epic.
+    The component agent picks them up and dispatches individually in the normal
+    Nervi polling loop.

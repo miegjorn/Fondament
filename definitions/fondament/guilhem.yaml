@@ -92,15 +92,55 @@ modifiers:
   - deconstructive
 tools:
   always_on:
-    # Matrix MCP tools (Charradissa#23). Served by the Charradissa daemon at
-    # http://charradissa:<port>/mcp; registered in the Guilhem pod by Caissa#33.
-    # These let Guilhem act in Matrix — send into rooms/DMs and resolve a component
-    # agent's DM room — not only respond to inbound events.
-    - id: matrix-send
+    - id: farga-write-signal
+      kind: mcp
+      server: farga
+      tool: write_signal
+    - id: farga-read-context
+      kind: mcp
+      server: farga
+      tool: read_context
+    - id: farga-write-artifact
+      kind: mcp
+      server: farga
+      tool: write_artifact
+    - id: farga-search-signals
+      kind: mcp
+      server: farga
+      tool: search_signals
+    - id: farga-list-projects
+      kind: mcp
+      server: farga
+      tool: list_projects
+    - id: farga-update-component-todo
+      kind: mcp
+      server: farga
+      tool: update_component_todo
+    - id: dispatcher-invoke-agent
+      kind: mcp
+      server: dispatcher
+      tool: invoke_agent
+    - id: dispatcher-get-agent-result
+      kind: mcp
+      server: dispatcher
+      tool: get_agent_result
+    - id: dispatcher-list-agent-specs
+      kind: mcp
+      server: dispatcher
+      tool: list_agent_specs
+    - id: charradissa-matrix-send
       kind: mcp
       server: charradissa
       tool: matrix_send
-    - id: matrix-get-dm
+    - id: charradissa-matrix-invite
+      kind: mcp
+      server: charradissa
+      tool: matrix_invite
+    - id: charradissa-matrix-kick
+      kind: mcp
+      server: charradissa
+      tool: matrix_kick
+    - id: charradissa-matrix-get-dm
       kind: mcp
       server: charradissa
       tool: matrix_get_dm

@@ -26,13 +26,29 @@ context: |
     returned by GET /context/project/{id}. This is what goes into /workspace/CLAUDE.md
     at spawn time.
 
-  ## Interface
+  ## MCP tools (primary interface for agents)
+
+  Farga exposes an MCP server at `POST /mcp`. All agents interact with Farga through
+  these tools — do not make raw HTTP calls when a tool exists.
+
+  | Tool | Description |
+  |------|-------------|
+  | `write_signal` | Write an observation, event, or decision to project memory |
+  | `read_context` | Read the current assembled context for a project as markdown |
+  | `write_artifact` | Store a durable structured output (design doc, ADR, decision) |
+  | `search_signals` | Retrieve recent signals for a project, optionally filtered by time |
+  | `list_projects` | List all known projects in Farga |
+  | `update_component_todo` | Create or overwrite the TODO record for a (project, component) pair |
+
+  Artifact kinds: `adr`, `design`, `test-plan`, `implementation-notes`, `decision`.
+
+  ## REST interface (infrastructure / external callers)
 
   - `GET /health` — liveness check
   - `GET /context/project/{id}` — full markdown context for a project
-  - `POST /signals` — write an observation
-  - `GET /signals?project={id}` — list signals for a project
-  - `POST /artifacts` — write a structured artifact
+  - `POST /signals` — write a signal (prefer MCP tool)
+  - `GET /signals?project={id}&since=<ISO8601>` — list signals
+  - `POST /artifacts` — write an artifact (prefer MCP tool)
   - `GET /artifacts/{id}` — retrieve an artifact
 
   ## Design constraints

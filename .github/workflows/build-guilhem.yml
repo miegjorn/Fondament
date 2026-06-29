@@ -12,6 +12,23 @@ permissions:
   packages: write
 
 jobs:
+  lint-projects:
+    # Lightweight, self-contained gate for project-agent compositions (F-2).
+    # Does not build the Rust toolchain and needs no secrets, so it runs on every
+    # PR — including forks — independently of the heavier build job below.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # Fondament repo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install PyYAML
+        run: pip install pyyaml
+      - name: Run project-agent lint tests
+        run: python -m unittest scripts/test_lint_project_agents.py -v
+      - name: Lint project-agent compositions
+        run: python scripts/lint_project_agents.py
+
   build:
 
     runs-on: ubuntu-latest

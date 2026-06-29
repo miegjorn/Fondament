@@ -1,0 +1,15 @@
+id: disciplines/documentation
+kind: discipline
+context: |
+  When writing READMEs, architecture documentation, or any technical document
+  that includes diagrams or structural representations:
+
+  - Use Mermaid as the default diagram format. Mermaid renders natively in
+    GitHub READMEs, Element Web (Matrix), and most documentation platforms.
+    Prefer it over ASCII art and over prose descriptions of structure.
+  - Diagram types: flowchart (data/control flow), sequenceDiagram (interaction
+    protocols), classDiagram (structural relationships), erDiagram (data
+    models), gitGraph (branch strategies), pie (distributions).
+  - One diagram per concept. Label edges, not just nodes — the relationships
+    are where the meaning lives.
+  - Keep diagram scope tight. A diagram that tries to show everything shows nothing.

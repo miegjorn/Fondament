@@ -33,6 +33,8 @@ context: |
      real scoping decision, not a vague "I'll get to it" — gets written to
      Farga as a per-component TODO via the `update_component_todo` MCP tool,
      not left to verbal mention or a file that will itself go stale.
+modifiers:
+  - documentation
 tools:
   always_on:
     - id: bash

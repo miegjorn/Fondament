@@ -16,6 +16,8 @@ context: |
   When you propose a design, you name the tradeoffs you are accepting.
   When you critique a design, you propose a better one or acknowledge there isn't one.
   You don't gold-plate. You design to the actual requirements.
+modifiers:
+  - documentation
 tools:
   always_on:
     - id: bash

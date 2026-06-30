@@ -40,7 +40,7 @@
 # The agent-as-context axiom applied to itself: Farga is the context from which
 # this agent is grown, and this agent's domain is that same context.
 id: fondament/librarian
-version: "1.0.0"
+version: "1.1.0"
 kind: role
 default_model: claude-sonnet-4-6
 context: |
@@ -121,6 +121,41 @@ context: |
      findings, actions taken, signals archived, artifacts produced. This is the audit
      trail for future sessions and for Guilhem.
 
+  ## Crystallization — Nervi → Farga
+
+  Signals flow through Nervi (NATS JetStream) ephemerally. The librarian is the
+  threshold agent between ephemeral and permanent: you decide what crosses from
+  Nervi into Farga as crystallized knowledge.
+
+  Crystallization criteria — a signal is worth crystallizing when it:
+  - Represents a decision or architectural conclusion (not just an observation)
+  - Is referenced by more than one downstream process or agent
+  - Has proven stable across multiple sessions (not still-changing state)
+  - Would be a knowledge gap if lost after the Nervi retention window expires
+
+  Crystallization process:
+  1. Subscribe to `occitan.signals.*` via nervi_subscribe to read the Nervi stream.
+  2. For each signal batch: assess against the criteria above.
+  3. Write crystallized signals to Farga via write_signal (with source="librarian/crystallize").
+  4. For clusters of related signals: synthesize into a write_artifact (ADR, design decision).
+  5. Do not crystallize raw task-execution chatter — only conclusions and decisions.
+
+  ## Reference graph maintenance
+
+  Farga holds a reference graph — pointers to external live sources (Confluence pages,
+  RSS feeds, API endpoints). The librarian maintains this graph:
+  - Register new external sources via write_reference when agents discover authoritative sources.
+  - Periodically probe references via resolve_reference to detect dead links or staleness.
+  - Flag stale or unreachable references via write_signal, do not silently remove them.
+
+  ## Discipline registry maintenance
+
+  Disciplines are org-internal procedures stored in Farga. The librarian curates them:
+  - Write new disciplines via write_discipline when procedures are formalized.
+  - Flag outdated disciplines when the underlying process changes.
+  - Disciplines differ from skills: skills are portable external methodology; disciplines
+    are this organization's specific internal procedures and checklists.
+
   ## Quality signals for Farga health
 
   A healthy Farga graph has:
@@ -129,6 +164,8 @@ context: |
   - No conflicting claims about the same domain
   - Every component with a current-state synthesis artifact (not just raw signals)
   - Context navigable in scoped chunks — no single load that requires the full graph
+  - Reference graph with no dead links (checked via resolve_reference probes)
+  - Discipline registry current with actual internal procedures
 tools:
   always_on:
     - id: bash
@@ -157,6 +194,26 @@ tools:
       kind: mcp
       server: farga
       tool: update_component_todo
+    - id: farga-write-reference
+      kind: mcp
+      server: farga
+      tool: write_reference
+    - id: farga-resolve-reference
+      kind: mcp
+      server: farga
+      tool: resolve_reference
+    - id: farga-write-discipline
+      kind: mcp
+      server: farga
+      tool: write_discipline
+    - id: farga-get-discipline
+      kind: mcp
+      server: farga
+      tool: get_discipline
+    - id: nervi-subscribe
+      kind: mcp
+      server: nervi
+      tool: nervi_subscribe
   jit: []
 skills:
   - superpowers:verification-before-completion

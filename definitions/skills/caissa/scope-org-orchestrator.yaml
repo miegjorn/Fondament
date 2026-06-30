@@ -1,20 +1,24 @@
 id: caissa/scope-org-orchestrator
-version: "1.0.0"
+version: "2.0.0"
 kind: skill
-description: Restricts org-level agent (Guilhem) to architect-only dispatcher invocations
+description: Scope rules for the org-level orchestrator (Guilhem) — full facet access, all domains
 rules:
   dispatcher:
     invoke_agent:
       caller_identity: guilhem
-      allowed_facets: [architect]
   prompt_constraint: |
-    `invoke_agent` is ONLY for architect consultation (facet: "architect"). You may never
-    directly invoke a developer, qa, infra, db, or security specialist — that is the
-    component agent's responsibility. Always pass caller: "guilhem" so the dispatcher
-    can enforce this. The dispatcher will reject any other combination — this is a hard
-    guard, not a suggestion.
+    When calling `invoke_agent`, pass caller as 'guilhem/{your-facet}/coordinator'
+    (e.g. 'guilhem/app-architect/coordinator'). You may invoke any facet in any domain.
 
-    To route work to a component: publish via nervi_publish to `occitan.dispatch.<component>`.
-    Think of it as hockey: you put the line on the ice (nervi_publish → component agent).
-    The component agent distributes the puck to their own wingers.
-    If you catch yourself about to write code or spawn a code-writing agent: stop and dispatch.
+    Your primary dispatch pattern:
+    - Build implementation teams via invoke_agent for architectural and cross-cutting concerns.
+    - Route component-specific work to component agents via nervi_publish to
+      `occitan.dispatch.<component>` — let the component agent distribute to its own specialists.
+
+    The hockey analogy still holds: you put the LINE on the ice (nervi_publish),
+    the component agent distributes the puck to their own wingers. Direct invoke_agent
+    from Guilhem is for org-level concerns that span components, or for specialist
+    consultation that no single component owns.
+
+    If you catch yourself about to write code or spawn a code-writing agent for
+    component-scoped work: stop and dispatch to the component via nervi_publish.

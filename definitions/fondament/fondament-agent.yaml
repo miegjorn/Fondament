@@ -1,5 +1,5 @@
 id: fondament/fondament-agent
-version: "1.4.0"
+version: "1.5.0"
 kind: component-agent
 component: fondament
 default_model: claude-sonnet-4-6
@@ -101,6 +101,18 @@ tools:
       kind: mcp
       server: nervi
       tool: nervi_subscribe
+    - id: dispatcher-invoke-agent
+      kind: mcp
+      server: dispatcher
+      tool: invoke_agent
+    - id: dispatcher-get-agent-result
+      kind: mcp
+      server: dispatcher
+      tool: get_agent_result
+    - id: dispatcher-list-specs
+      kind: mcp
+      server: dispatcher
+      tool: list_agent_specs
   jit: []
 skills:
   - id: caissa/scope-component-orchestrator

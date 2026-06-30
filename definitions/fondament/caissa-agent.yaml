@@ -115,6 +115,8 @@ skills:
     version: "1.0.0"
   - id: caissa/bug-triage
     version: "1.0.0"
+  - id: occitan/diagram-rendering
+    version: "1.0.0"
 models:
   chronicle: claude-haiku-4-5-20251001
   dispatch: claude-sonnet-4-6

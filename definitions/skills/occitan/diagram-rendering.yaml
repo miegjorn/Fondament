@@ -1,0 +1,94 @@
+id: occitan/diagram-rendering
+version: "1.0.0"
+kind: skill
+description: |
+  Produce rendered diagrams in Matrix rooms by writing diagram source in a fenced
+  code block. Charradissa intercepts the block, renders it via Kroki (self-hosted),
+  and posts the SVG back to the room — no tool call needed, the fence is the trigger.
+
+rules:
+  prompt_constraint: |
+    ## DIAGRAM RENDERING
+
+    Write diagram source in a fenced code block with the diagram type as the language
+    tag. Charradissa intercepts it and posts a rendered SVG to the room automatically.
+
+    ```mermaid
+    flowchart LR
+      A --> B
+    ```
+
+    No tool call, no extra step — the fence is the trigger.
+
+    ---
+
+    ### When to use a diagram
+
+    Use a diagram when topology, flow, or structure is clearer visually than in prose.
+    Not every explanation needs one. A list of three components does not need a diagram.
+    A six-component system with cross-cutting dependencies does.
+
+    Good candidates: system architecture, data flow, sequence of interactions, schema
+    relationships, NATS subject hierarchies, decision trees, deployment topology.
+
+    ---
+
+    ### Available diagram types
+
+    **Architecture and system design**
+    - `c4plantuml` — C4 model (Context / Container / Component / Code). Best for
+      describing how the Occitan stack fits together for a human reader.
+    - `plantuml` — UML class, component, deployment, sequence, state, activity.
+      Verbose but precise for formal system descriptions.
+    - `d2` — declarative, clean syntax. Good for component maps and data flows where
+      PlantUML feels heavy. Renders quickly.
+    - `structurizr` — C4 workspace DSL. Use when the audience needs the full ADR-linked
+      view, not just a one-off diagram.
+
+    **Flow and sequence**
+    - `mermaid` — flowchart, sequence, class, state, ER, gantt. Most flexible for
+      quick diagrams. Also rendered natively by Element, so it shows up even for users
+      not on this homeserver.
+    - `bpmn` — business process notation. Use when describing a multi-actor workflow
+      (approval flows, provisioning pipelines) for a non-technical audience.
+
+    **Data and schema**
+    - `dbml` — database schema as human-readable markup. Use when explaining Farga's
+      or Amassada's persistence model.
+    - `erd` — entity-relationship. Simpler than dbml when you just need boxes and
+      arrows, not the full field list.
+
+    **Network and infrastructure**
+    - `nwdiag` — network topology. Use for describing NATS cluster layout, k8s namespace
+      topology, or VPC structure.
+    - `rackdiag` — server rack layout. Useful for physical or cloud infrastructure docs.
+
+    **Signal and timing**
+    - `wavedrom` — digital signal timing. Use when explaining NATS message ordering,
+      JetStream consumer lag, or protocol timing constraints.
+
+    **Other**
+    - `graphviz` — directed/undirected graphs. Best for dependency graphs, call graphs,
+      or any graph where layout matters more than style.
+    - `svgbob` / `ditaa` — ASCII art promoted to clean diagrams. Use when the source
+      should be readable in plain text (ADR comments, git commit bodies).
+    - `nomnoml` — lightweight UML. Between Mermaid and PlantUML in verbosity.
+
+    ---
+
+    ### Practical defaults
+
+    - For a quick architecture overview: `d2` or `mermaid flowchart`
+    - For a sequence of agent interactions: `mermaid sequenceDiagram`
+    - For NATS subject topology: `nwdiag`
+    - For a database schema: `dbml`
+    - For C4 system context: `c4plantuml`
+    - For a state machine: `mermaid stateDiagram-v2`
+
+    ---
+
+    ### Keep diagrams focused
+
+    One diagram = one question answered. A diagram that tries to show everything
+    shows nothing useful. If a diagram needs a legend longer than the diagram itself,
+    split it.

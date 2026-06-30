@@ -956,6 +956,7 @@ in a role's `skills:` array is both a capability grant and a qualification signa
 ### agency-agents (msitarzewski)
 
 **Repository**: https://github.com/msitarzewski/agency-agents  
+**License**: MIT  
 **What we use**: Role taxonomy and agent structure patterns. The 232-agent roster across
 16 divisions informed our scope decisions (which roles to define, which to deliberately
 collapse, which to defer) and the internal structure of role `context:` fields (Identity +
@@ -976,7 +977,7 @@ Definitions informed by agency-agents patterns:
 ### alirezarezvani — claude-skills
 
 **Repository**: https://github.com/alirezarezvani/claude-skills  
-**License**: see repository  
+**License**: MIT — Copyright Alireza Rezvani 2025  
 **What we use**: 345+ production-ready Claude Code skills across 17 domains. Skill IDs are plain kebab-case (no org prefix). Install via `claude install engineering-skills` or `claude install engineering-advanced-skills` for the relevant bundles.
 
 | Skill ID | Used in | What it covers |
@@ -1009,6 +1010,7 @@ Note: `cloud-security` covers cloud posture (control-plane level: IAM, storage, 
 ### kyrolabs — awesome-agents
 
 **Repository**: https://github.com/kyrolabs/awesome-agents  
+**License**: no license file — used as a reference survey only, no code or content copied  
 **What we use**: Framework and implementation survey. Validated our agent primitive taxonomy
 against the industry (MetaGPT's Architect+Engineer+QA decomposition, Stakpak for infra-engineer,
 SWE-Agent for story-execution analogue, Cordum for Gardian's governance scope).

@@ -7,7 +7,7 @@
 //! subject/qualifier derivation so every publisher applies them identically.
 
 use crate::address::CompositionAddress;
-use crate::types::{ComposedPart, ResolvedAgent};
+use crate::types::{ComposedPart, ResolvedAgent, StructuredReasoning};
 use serde::{Deserialize, Serialize};
 
 /// Fixed per ADR-N-005 — every `Contribution` declares it was resolved only
@@ -48,14 +48,20 @@ impl Contribution {
     /// Construct a `Contribution` for a completed call, gated on that call
     /// having actually run the aporia pass.
     ///
-    /// Returns `None` when `agent.structured_reasoning` is `None` — this is
-    /// the publish-side gate from ADR-N-005: a contribution may only be
-    /// produced by a call that ran `+aporia`, never by an agent's mere
-    /// existence. `project-agent.yaml`'s aporia-off-by-default posture is
-    /// unaffected by this type; it only decides what a caller *may* publish
-    /// once a call has already run aporia for its own reasons.
-    pub fn from_resolved_agent(
-        agent: &ResolvedAgent,
+    /// Returns `None` when `structured_reasoning` is `None` — this is the
+    /// publish-side gate from ADR-N-005: a contribution may only be produced
+    /// by a call that ran `+aporia`, never by an agent's mere existence.
+    /// `project-agent.yaml`'s aporia-off-by-default posture is unaffected by
+    /// this type; it only decides what a caller *may* publish once a call
+    /// has already run aporia for its own reasons.
+    ///
+    /// Takes `structured_reasoning` directly (rather than a full
+    /// `ResolvedAgent`) because dispatch call sites — e.g. Amassada's
+    /// `TurnRequest`/`TurnResponse` — carry the field independently of any
+    /// `ResolvedAgent` value by the time a response comes back.
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_structured_reasoning(
+        structured_reasoning: Option<&StructuredReasoning>,
         contributor: &CompositionAddress,
         composed_parts: &[ComposedPart],
         content: impl Into<String>,
@@ -63,7 +69,7 @@ impl Contribution {
         produced_at: impl Into<String>,
         session_ref: Option<String>,
     ) -> Option<Self> {
-        agent.structured_reasoning.as_ref()?;
+        structured_reasoning?;
         Some(Self {
             kind: CONTRIBUTION_KIND.to_string(),
             contribution_id: contribution_id.into(),
@@ -74,6 +80,29 @@ impl Contribution {
             produced_at: produced_at.into(),
             session_ref,
         })
+    }
+
+    /// Convenience wrapper over [`Contribution::from_structured_reasoning`]
+    /// for callers that already hold a full `ResolvedAgent`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_resolved_agent(
+        agent: &ResolvedAgent,
+        contributor: &CompositionAddress,
+        composed_parts: &[ComposedPart],
+        content: impl Into<String>,
+        contribution_id: impl Into<String>,
+        produced_at: impl Into<String>,
+        session_ref: Option<String>,
+    ) -> Option<Self> {
+        Self::from_structured_reasoning(
+            agent.structured_reasoning.as_ref(),
+            contributor,
+            composed_parts,
+            content,
+            contribution_id,
+            produced_at,
+            session_ref,
+        )
     }
 
     /// The Nèrvi subject this contribution publishes to, per ADR-N-005:

@@ -154,3 +154,54 @@ pub enum LayerKind {
     Stance,
     Facet,
 }
+
+#[cfg(test)]
+mod aporia_tax_tests {
+    use super::*;
+
+    #[test]
+    fn parts_count_tiering_boundaries() {
+        // 0-1 parts -> Low, 2-3 -> Medium, 4+ -> High.
+        // This tiering is the entire input to the aporia cost model: it decides
+        // how many extra thinking/reasoning tokens a call spends before the
+        // Anthropic pricing multiplier is even applied.
+        let cases = [
+            (0usize, ReasoningIntensity::Low),
+            (1, ReasoningIntensity::Low),
+            (2, ReasoningIntensity::Medium),
+            (3, ReasoningIntensity::Medium),
+            (4, ReasoningIntensity::High),
+            (5, ReasoningIntensity::High),
+            (10, ReasoningIntensity::High),
+        ];
+        for (n, expected) in cases {
+            assert_eq!(
+                StructuredReasoning::from_parts_count(n).intensity,
+                expected,
+                "parts_count={n} should map to {expected:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn anthropic_budget_values_match_documented_tax() {
+        assert_eq!(StructuredReasoning::from_parts_count(1).anthropic_budget(), 3_000);
+        assert_eq!(StructuredReasoning::from_parts_count(3).anthropic_budget(), 6_000);
+        assert_eq!(StructuredReasoning::from_parts_count(4).anthropic_budget(), 10_000);
+    }
+
+    #[test]
+    fn from_budget_is_consistent_with_anthropic_budget_round_trip() {
+        // Any budget derived from from_parts_count must round-trip through
+        // from_budget to the same intensity tier, or the two constructors
+        // have drifted apart.
+        for n in 0..=6 {
+            let via_parts = StructuredReasoning::from_parts_count(n);
+            let via_budget = StructuredReasoning::from_budget(via_parts.anthropic_budget());
+            assert_eq!(
+                via_parts.intensity, via_budget.intensity,
+                "from_parts_count({n}) and from_budget round-trip diverged"
+            );
+        }
+    }
+}

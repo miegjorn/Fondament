@@ -1,4 +1,5 @@
 pub mod address;
+pub mod contribution;
 pub mod definition;
 pub mod error;
 pub mod farga;

@@ -73,6 +73,25 @@ impl FromStr for CompositionAddress {
     }
 }
 
+impl CompositionAddress {
+    /// The leading path segment — `project` for a `Composed` address, or the
+    /// first `/`-delimited segment of `role` for a `Role` address (the whole
+    /// string if `role` has no `/`). This is the `<component>` used in Nèrvi
+    /// subject naming (`occitan.contribution.<component>`, ADR-N-005; mirrors
+    /// `occitan.dispatch.<component>`). Note a `fondament/`-namespaced role
+    /// (e.g. `fondament/guilhem`) yields `"fondament"`, not the role's own
+    /// name — callers publishing on behalf of a specific org-level role
+    /// should not assume this always names that role.
+    pub fn component_name(&self) -> &str {
+        match self {
+            CompositionAddress::Role { role, .. } => {
+                role.split('/').next().unwrap_or(role)
+            }
+            CompositionAddress::Composed { project, .. } => project,
+        }
+    }
+}
+
 impl fmt::Display for CompositionAddress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

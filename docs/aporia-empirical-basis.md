@@ -190,3 +190,80 @@ stress test thrown at it (model tier, question type, designed difficulty,
 deliberately corrupted input, cross-provider), which is more than most
 architecture decisions get before being shipped, but it is still eight
 experiments, not eight hundred.
+
+## Experiment 9 — the aporia tax, for the "default mode on component agents" question
+
+This experiment answers a narrower, more operational question than 1–8: not
+"does raw-voice injection produce better reasoning" (settled), but "what does
+turning it on cost per call, and does that change the recommended default for
+component/project agents" (`Fondament/definitions/fondament/domains/project-agent.yaml`
+currently ships aporia off by default, enabled per-spawn only).
+
+### What's a test vs. what's a projection here
+
+- **Code-level, executable, run**: `fondament-core/src/types.rs` gained
+  `mod aporia_tax_tests` (3 tests) asserting the exact tiering the tax is
+  built on — `StructuredReasoning::from_parts_count`: 0–1 composed parts →
+  `Low` (3,000 token budget), 2–3 → `Medium` (6,000), 4+ → `High` (10,000) —
+  plus a round-trip check against `from_budget`. `cargo test -p fondament-core
+  aporia` — 9 tests total (3 new + 6 existing), all passing as of this
+  writing. This is the formula every cost number below is derived from; it
+  was not previously covered by a standalone unit test (only exercised
+  indirectly through `resolver_tests.rs`).
+- **Calculated from real, already-measured data**: per-call cost and latency
+  for Haiku 4.5 / Sonnet 4.6 / Opus 4.8 running the aporia (raw-voices, "C")
+  condition, back-solved from experiment 6's 6-call totals (`$0.050 / $0.220 /
+  $0.384` for 6 calls) against current Anthropic list pricing (Haiku
+  $1/$5, Sonnet 4.6 $3/$15, Opus 4.8 $5/$25 per MTok).
+- **Projected, not tested — per explicit instruction not to call the live
+  Gemini API for this**: Gemini 2.5 Pro cost, using Gemini's public per-token
+  rate applied to the *same implied token shape* as Haiku's exp6 calls (back-
+  solved input/output split assuming a 1:4 in:out ratio, itself an
+  assumption). No Gemini latency projection is offered — exp6 has no Gemini
+  analog to anchor one.
+
+### Results
+
+| Model | Per-call cost (aporia/C condition) | Avg latency | Source |
+|---|---|---|---|
+| Haiku 4.5 | **$0.0083** | 22.7s | measured (exp6 ÷ 6) |
+| Sonnet 4.6 | $0.0367 | 67.0s | measured (exp6 ÷ 6) |
+| Opus 4.8 | $0.0640 (floor) | 50.2s | measured (exp6 ÷ 6) |
+| Gemini 2.5 Pro | **~$0.0164 (projected)** | not modeled | projection only — see caveat below |
+
+Implied per-call token shape (back-solved from cost + current pricing, not
+directly observed): Haiku ~397 in / ~1,587 out; Sonnet ~582 in / ~2,328 out;
+Opus ~610 in / ~2,438 out.
+
+**Gemini-as-delegated-entity vs. Haiku:** at the projected rate, Gemini 2.5
+Pro costs roughly **2×** what Haiku 4.5 costs for the same workload shape,
+with no efficiency counter-argument in its favor — experiment 8 already
+showed Gemini needs the raw voices *more* (larger baseline-to-C score jump)
+but does not show it needing *fewer* tokens to get there. Haiku remains the
+cheaper "workhorse" candidate for any design that runs aporia broadly across
+component agents; Gemini's case, if there is one, is provider diversity for
+the cross-provider canvases described earlier in this document, not cost.
+
+### What this means for "aporia as default mode for component agents"
+
+The per-call tax is real but small at the Haiku tier (~$0.008, ~23s) and
+non-trivial at Sonnet/Opus tiers (~$0.037–0.064, ~50–67s). This does not
+support flipping the `project-agent.yaml` default wholesale — most
+component-agent calls are routine and would pay a tax for a reasoning pass
+whose output never leaves the agent. It does support a narrower design:
+gate aporia on the specific call that will publish a crystallized
+contribution to Nervi, and prefer Haiku as the model for that gated call
+where quality parity holds (per experiment 6, Haiku already matches
+Sonnet/Opus scores in the C condition at the lowest cost and highest speed
+of the three).
+
+### Caveat
+
+The Gemini figure is a projection built on two unverified assumptions: (1)
+that Gemini would require the same implied token shape as Haiku's measured
+calls to perform an equivalent raw-voice decomposition, and (2) the Gemini
+2.5 Pro per-token rate used here reflects the last publicly known rate card
+available to this session, not a rate confirmed live for the current date.
+Treat the $0.0164/call figure as directional only — if this number needs to
+inform a real budget decision, it should be replaced with a live measurement
+before being relied on.

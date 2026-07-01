@@ -70,8 +70,10 @@ pub struct AssessResult {
 }
 
 async fn assess_definition(id: &str, kind: &str, context: &str) -> anyhow::Result<AssessResult> {
-    let api_key = std::env::var("ANTHROPIC_API_KEY")
-        .map_err(|_| anyhow::anyhow!("ANTHROPIC_API_KEY not set"))?;
+    let api_key = std::env::var("ANTHROPIC_API_KEY").ok();
+    let xai_key = std::env::var("XAI_API_KEY").ok();
+
+    let model = if xai_key.is_some() { "grok-3" } else { "claude-sonnet-4-6" };
 
     let prompt = format!(
         "You are reviewing an agent definition file for semantic consistency.\n\n\
@@ -87,26 +89,48 @@ async fn assess_definition(id: &str, kind: &str, context: &str) -> anyhow::Resul
     );
 
     let client = reqwest::Client::new();
-    let resp = client
-        .post("https://api.anthropic.com/v1/messages")
-        .header("x-api-key", &api_key)
-        .header("anthropic-version", "2023-06-01")
-        .header("content-type", "application/json")
-        .json(&serde_json::json!({
-            "model": "claude-sonnet-4-6",
-            "max_tokens": 256,
-            "messages": [{"role": "user", "content": prompt}]
-        }))
-        .send()
-        .await?
-        .error_for_status()?;
+    let resp = if model.starts_with("grok") || model.starts_with("xai") {
+        let key = xai_key.ok_or_else(|| anyhow::anyhow!("XAI_API_KEY not set"))?;
+        client
+            .post("https://api.x.ai/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", key))
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "model": model,
+                "max_tokens": 256,
+                "messages": [{"role": "user", "content": prompt}]
+            }))
+            .send()
+            .await?
+            .error_for_status()?
+    } else {
+        let key = api_key.ok_or_else(|| anyhow::anyhow!("ANTHROPIC_API_KEY not set"))?;
+        client
+            .post("https://api.anthropic.com/v1/messages")
+            .header("x-api-key", key)
+            .header("anthropic-version", "2023-06-01")
+            .header("content-type", "application/json")
+            .json(&serde_json::json!({
+                "model": model,
+                "max_tokens": 256,
+                "messages": [{"role": "user", "content": prompt}]
+            }))
+            .send()
+            .await?
+            .error_for_status()?
+    };
 
     let json: serde_json::Value = resp.json().await?;
-    let text = json["content"]
-        .as_array()
-        .and_then(|blocks| blocks.iter().find(|b| b["type"].as_str() == Some("text")))
-        .and_then(|b| b["text"].as_str())
-        .ok_or_else(|| anyhow::anyhow!("empty response from Claude"))?;
+    let text = if model.starts_with("grok") || model.starts_with("xai") {
+        json["choices"][0]["message"]["content"].as_str()
+            .ok_or_else(|| anyhow::anyhow!("empty response from Grok"))?
+    } else {
+        json["content"]
+            .as_array()
+            .and_then(|blocks| blocks.iter().find(|b| b["type"].as_str() == Some("text")))
+            .and_then(|b| b["text"].as_str())
+            .ok_or_else(|| anyhow::anyhow!("empty response from Claude"))?
+    };
 
     let result: AssessResult = serde_json::from_str(text.trim())
         .map_err(|e| anyhow::anyhow!("could not parse assessment JSON '{}': {}", text, e))?;

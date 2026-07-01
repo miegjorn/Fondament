@@ -134,4 +134,5 @@ jobs:
           git config user.name "Occitan CI"
           git add deploy/charts/guilhem/values.yaml
           git diff --staged --quiet && echo "no-op" || \
-            git commit -m "chore(guilhem): deploy guilhem-sha-${GITHUB_SHA:0:7}" && git push
+            git commit -m "chore(guilhem): deploy guilhem-sha-${GITHUB_SHA:0:7}" && \
+            git pull --rebase origin main && git push

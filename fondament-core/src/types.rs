@@ -26,21 +26,30 @@ impl ModelId {
         let s = &self.0;
         if s.starts_with("grok") || s.starts_with("xai:") {
             ("grok".to_string(), s.trim_start_matches("xai:").to_string())
+        } else if s.starts_with("gpt-") || s.starts_with("o1") || s.starts_with("o3") || s.starts_with("o4") || s.starts_with("openai:") {
+            ("openai".to_string(), s.trim_start_matches("openai:").to_string())
+        } else if s.starts_with("qwen-") || s.starts_with("qwq-") {
+            ("qwen".to_string(), s.to_string())
         } else if s.contains("claude") || s.starts_with("anthropic:") {
             ("anthropic".to_string(), s.trim_start_matches("anthropic:").to_string())
+        } else if let Some(idx) = s.find(':') {
+            (s[..idx].to_string(), s[idx+1..].to_string())
         } else {
             ("unknown".to_string(), s.to_string())
         }
     }
 
-    /// For backward compat with existing lint and definitions.
-    /// Accepts all current Claude models + starts allowing grok* models.
+    /// Accepts all known model prefixes across supported providers.
+    /// Generic <provider>:<model> format accepted for any future provider.
     pub fn is_valid(&self) -> bool {
         let s = self.0.as_str();
         matches!(s,
             "claude-haiku-4-5-20251001" | "claude-sonnet-4-6" |
             "claude-opus-4-8" | "claude-fable-5"
         ) || s.starts_with("grok") || s.starts_with("xai:")
+          || s.starts_with("gpt-") || s.starts_with("o1") || s.starts_with("o3") || s.starts_with("o4") || s.starts_with("openai:")
+          || s.starts_with("qwen-") || s.starts_with("qwq-")
+          || s.contains(':')
     }
 }
 
@@ -64,6 +73,8 @@ pub enum ModelProvider {
     #[default]
     Anthropic,
     Grok,
+    OpenAI,
+    Qwen,
     Other(String),
 }
 

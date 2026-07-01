@@ -166,3 +166,38 @@ tools:
     // No valid-model-id failure for grok*
     assert!(!results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "valid-model-id")));
 }
+
+#[test]
+fn openai_and_qwen_models_pass_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "roles/gpt-reviewer.yaml", r#"
+id: roles/gpt-reviewer
+kind: role
+default_model: gpt-4o
+context: "OpenAI-backed reviewer role."
+tools:
+  always_on: []
+  jit: []
+"#);
+    write_def(&dir, "roles/qwen-analyst.yaml", r#"
+id: roles/qwen-analyst
+kind: role
+default_model: qwen-max
+context: "Qwen-backed analyst role."
+tools:
+  always_on: []
+  jit: []
+"#);
+    write_def(&dir, "roles/custom-provider.yaml", r#"
+id: roles/custom-provider
+kind: role
+default_model: "mistral:mistral-large-latest"
+context: "Generic provider:model format."
+tools:
+  always_on: []
+  jit: []
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    assert!(!results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "valid-model-id")));
+}

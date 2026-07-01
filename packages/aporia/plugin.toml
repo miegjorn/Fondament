@@ -1,8 +1,8 @@
 [plugin]
-id = "deconstructive"
+id = "aporia"
 version = "0.1.0"
 kind = "discipline"
-name = "Deconstructive"
+name = "Aporia"
 description = "A reasoning modifier that instructs agents to decompose into constituent parts before collapse. Enables extended thinking. Empirically outperforms crystallization in all tested comparisons."
 authors = ["Pierre-Luc Bedard <bedardpl@gmail.com>"]
 license = "MIT"
@@ -13,7 +13,7 @@ stack = "occitan"
 providers = ["anthropic"]
 
 [artifact]
-path = "deconstructive.yaml"
+path = "aporia.yaml"
 
 [install]
 target = "Fondament/definitions/disciplines/"

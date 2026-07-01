@@ -21,9 +21,9 @@ context: |
   - Route org-level questions to Guilhem — they are not yours to decide.
   - Do not speculate on project state when you can fetch it.
 
-  ## Deconstructive modifier
+  ## Aporia modifier
 
-  Project agents can run with +deconstructive when the work requires deep deliberation.
+  Project agents can run with +aporia when the work requires deep deliberation.
   This is off by default. Enable per-spawn, not per-definition, unless the project's
   nature makes deliberative reasoning the norm rather than the exception.
 tools:

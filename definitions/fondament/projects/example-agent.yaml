@@ -12,8 +12,8 @@ parts:
   - role: context
     source: farga
     project: "example"
-# To enable the deconstructive modifier, add it to the CompositionAddress at
-# dispatch time (e.g. "fondament/projects/example-agent+deconstructive"), or
-# include "deconstructive" in the modifiers list on the CompositionAddress.
-# The `deconstructive: false` field has no effect — serde drops it silently.
+# To enable the aporia modifier, add it to the CompositionAddress at
+# dispatch time (e.g. "fondament/projects/example-agent+aporia"), or
+# include "aporia" in the modifiers list on the CompositionAddress.
+# The `aporia: false` field has no effect — serde drops it silently.
 model: claude-sonnet-4-6

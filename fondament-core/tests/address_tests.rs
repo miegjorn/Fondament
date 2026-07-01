@@ -36,12 +36,12 @@ fn display_roundtrips() {
 }
 
 #[test]
-fn parses_role_with_deconstructive_modifier() {
-    let a: CompositionAddress = "fondament/roles/security-sre+deconstructive".parse().unwrap();
+fn parses_role_with_aporia_modifier() {
+    let a: CompositionAddress = "fondament/roles/security-sre+aporia".parse().unwrap();
     match &a {
         CompositionAddress::Role { role, modifiers, stance_override } => {
             assert_eq!(role, "fondament/roles/security-sre");
-            assert_eq!(modifiers, &["deconstructive"]);
+            assert_eq!(modifiers, &["aporia"]);
             assert!(stance_override.is_none());
         }
         _ => panic!("expected Role"),
@@ -50,12 +50,12 @@ fn parses_role_with_deconstructive_modifier() {
 
 #[test]
 fn parses_composed_with_modifier_and_stance() {
-    let a: CompositionAddress = "acme-auth/auth+deconstructive+adversarial".parse().unwrap();
+    let a: CompositionAddress = "acme-auth/auth+aporia+adversarial".parse().unwrap();
     match &a {
         CompositionAddress::Composed { project, facet, modifiers, stance } => {
             assert_eq!(project, "acme-auth");
             assert_eq!(facet.as_deref(), Some("auth"));
-            assert_eq!(modifiers, &["deconstructive"]);
+            assert_eq!(modifiers, &["aporia"]);
             assert_eq!(stance, "adversarial");
         }
         _ => panic!("expected Composed"),
@@ -65,11 +65,11 @@ fn parses_composed_with_modifier_and_stance() {
 #[test]
 fn parses_modifier_only_non_fondament_as_role() {
     // No stance means no Composed — falls through to Role
-    let a: CompositionAddress = "acme-auth/auth+deconstructive".parse().unwrap();
+    let a: CompositionAddress = "acme-auth/auth+aporia".parse().unwrap();
     match &a {
         CompositionAddress::Role { role, modifiers, stance_override } => {
             assert_eq!(role, "acme-auth/auth");
-            assert_eq!(modifiers, &["deconstructive"]);
+            assert_eq!(modifiers, &["aporia"]);
             assert!(stance_override.is_none());
         }
         _ => panic!("expected Role (modifier-only, no stance)"),
@@ -79,8 +79,8 @@ fn parses_modifier_only_non_fondament_as_role() {
 #[test]
 fn display_roundtrips_with_modifier() {
     for s in [
-        "fondament/roles/security-sre+deconstructive",
-        "acme-auth/auth+deconstructive+adversarial",
+        "fondament/roles/security-sre+aporia",
+        "acme-auth/auth+aporia+adversarial",
     ] {
         let a: CompositionAddress = s.parse().unwrap();
         assert_eq!(a.to_string(), s, "display must roundtrip for {}", s);
@@ -101,6 +101,6 @@ fn rejects_two_non_modifier_stances() {
 
 #[test]
 fn rejects_address_with_empty_path() {
-    let result: Result<CompositionAddress, _> = "+deconstructive".parse();
+    let result: Result<CompositionAddress, _> = "+aporia".parse();
     assert!(result.is_err(), "address with empty path before + should fail");
 }

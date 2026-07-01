@@ -17,9 +17,9 @@ pub async fn resolve(
     let mut jit_tools: Vec<ToolDefinition> = Vec::new();
     let mut collected_parts: Vec<ComposedPart> = Vec::new();
 
-    let is_deconstructive = match address {
-        CompositionAddress::Role { modifiers, .. } => modifiers.iter().any(|m| m == "deconstructive"),
-        CompositionAddress::Composed { modifiers, .. } => modifiers.iter().any(|m| m == "deconstructive"),
+    let is_aporia = match address {
+        CompositionAddress::Role { modifiers, .. } => modifiers.iter().any(|m| m == "aporia"),
+        CompositionAddress::Composed { modifiers, .. } => modifiers.iter().any(|m| m == "aporia"),
     };
 
     // Layer 1: org context from Farga
@@ -122,8 +122,8 @@ pub async fn resolve(
     }
 
     // Deconstructive preamble: inject as layer[0] when modifier is active
-    let structured_reasoning = if is_deconstructive {
-        let preamble = build_deconstructive_preamble(&collected_parts);
+    let structured_reasoning = if is_aporia {
+        let preamble = build_aporia_preamble(&collected_parts);
         layers.insert(0, preamble);
         Some(StructuredReasoning::from_parts_count(collected_parts.len()))
     } else {
@@ -139,9 +139,9 @@ pub async fn resolve(
     })
 }
 
-pub fn build_deconstructive_preamble(parts: &[ComposedPart]) -> String {
+pub fn build_aporia_preamble(parts: &[ComposedPart]) -> String {
     let mut preamble = String::from(
-        "--- injected by deconstructive discipline ---\nYou are composed of the following parts:\n"
+        "--- injected by aporia discipline ---\nYou are composed of the following parts:\n"
     );
     if parts.is_empty() {
         preamble.push_str("  - [role: this agent] — reason from your full context\n");

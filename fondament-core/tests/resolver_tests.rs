@@ -1,7 +1,7 @@
 use fondament_core::{
     address::CompositionAddress,
     farga::{FargaReader, OrgContext, InitiativeContext, ProjectContext},
-    resolver::{build_deconstructive_preamble, resolve},
+    resolver::{build_aporia_preamble, resolve},
     tree::DefinitionTree,
     ComposedPart, PartKind,
 };
@@ -90,13 +90,13 @@ async fn all_four_stances_resolve_without_error() {
     }
 }
 
-fn make_tree_with_deconstructive() -> (DefinitionTree, TempDir) {
+fn make_tree_with_aporia() -> (DefinitionTree, TempDir) {
     let dir = TempDir::new().unwrap();
     let files: &[(&str, &str)] = &[
         ("disciplines/system-design.yaml",
          "id: disciplines/system-design\nkind: discipline\ncontext: \"You architect systems.\"\n"),
-        ("disciplines/deconstructive.yaml",
-         "id: disciplines/deconstructive\nkind: discipline\nmodifier: true\n"),
+        ("disciplines/aporia.yaml",
+         "id: disciplines/aporia\nkind: discipline\nmodifier: true\n"),
         ("stances/adversarial.yaml",
          "id: stances/adversarial\nkind: stance\ncontext: \"Challenge every assumption.\"\n"),
         ("roles/platform-architect.yaml",
@@ -111,63 +111,63 @@ fn make_tree_with_deconstructive() -> (DefinitionTree, TempDir) {
 }
 
 #[tokio::test]
-async fn deconstructive_modifier_injects_preamble_before_domain_content() {
-    let (tree, _dir) = make_tree_with_deconstructive();
-    let address: CompositionAddress = "fondament/platform-architect+deconstructive".parse().unwrap();
+async fn aporia_modifier_injects_preamble_before_domain_content() {
+    let (tree, _dir) = make_tree_with_aporia();
+    let address: CompositionAddress = "fondament/platform-architect+aporia".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
     assert!(
-        agent.system_prompt.contains("deconstructive discipline"),
+        agent.system_prompt.contains("aporia discipline"),
         "preamble header must appear in system_prompt"
     );
     assert!(
         agent.system_prompt.contains("Before producing any response"),
         "preamble instructions must appear in system_prompt"
     );
-    let preamble_pos = agent.system_prompt.find("deconstructive discipline").unwrap();
+    let preamble_pos = agent.system_prompt.find("aporia discipline").unwrap();
     let domain_pos = agent.system_prompt.find("platform architect").unwrap();
     assert!(preamble_pos < domain_pos, "preamble must precede domain content");
 }
 
 #[tokio::test]
-async fn deconstructive_modifier_sets_structured_reasoning() {
-    let (tree, _dir) = make_tree_with_deconstructive();
-    let address: CompositionAddress = "fondament/platform-architect+deconstructive".parse().unwrap();
+async fn aporia_modifier_sets_structured_reasoning() {
+    let (tree, _dir) = make_tree_with_aporia();
+    let address: CompositionAddress = "fondament/platform-architect+aporia".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
-    assert!(agent.structured_reasoning.is_some(), "structured_reasoning must be set with deconstructive modifier");
+    assert!(agent.structured_reasoning.is_some(), "structured_reasoning must be set with aporia modifier");
     let budget = agent.structured_reasoning.unwrap().anthropic_budget();
     assert!(budget >= 3_000, "minimum anthropic budget is 3000 tokens");
     assert!(budget <= 10_000, "anthropic budget is capped at 10000 tokens");
 }
 
 #[tokio::test]
-async fn without_deconstructive_no_preamble_no_reasoning() {
-    let (tree, _dir) = make_tree_with_deconstructive();
+async fn without_aporia_no_preamble_no_reasoning() {
+    let (tree, _dir) = make_tree_with_aporia();
     let address: CompositionAddress = "fondament/platform-architect".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
     assert!(
-        !agent.system_prompt.contains("deconstructive discipline"),
-        "preamble must not appear without deconstructive modifier"
+        !agent.system_prompt.contains("aporia discipline"),
+        "preamble must not appear without aporia modifier"
     );
     assert!(
         agent.structured_reasoning.is_none(),
-        "structured_reasoning must be None without deconstructive modifier"
+        "structured_reasoning must be None without aporia modifier"
     );
 }
 
 #[tokio::test]
-async fn deconstructive_with_stance_collects_stance_as_part() {
-    let (tree, _dir) = make_tree_with_deconstructive();
-    // "fondament/platform-architect+deconstructive" has no stance_override,
+async fn aporia_with_stance_collects_stance_as_part() {
+    let (tree, _dir) = make_tree_with_aporia();
+    // "fondament/platform-architect+aporia" has no stance_override,
     // but stances/adversarial is in the tree. Test a role that directly references
     // the stance via a Role with stance_override.
-    let address: CompositionAddress = "fondament/platform-architect+deconstructive+adversarial".parse().unwrap();
-    // This parses as Role { role: "fondament/platform-architect", modifiers: ["deconstructive"], stance_override: Some("adversarial") }
+    let address: CompositionAddress = "fondament/platform-architect+aporia+adversarial".parse().unwrap();
+    // This parses as Role { role: "fondament/platform-architect", modifiers: ["aporia"], stance_override: Some("adversarial") }
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
     // Stance context must appear in the system prompt
     assert!(agent.system_prompt.contains("Challenge every assumption"),
         "adversarial stance context must appear");
-    // Preamble must be present (deconstructive active)
-    assert!(agent.system_prompt.contains("deconstructive discipline"),
+    // Preamble must be present (aporia active)
+    assert!(agent.system_prompt.contains("aporia discipline"),
         "preamble must be injected");
     // 1 discipline + 1 stance = 2 parts → Medium → 6000 tokens at Anthropic
     let budget = agent.structured_reasoning.unwrap().anthropic_budget();
@@ -206,7 +206,7 @@ fn composed_part_session_node_renders_with_weight() {
         weight: 1.0,
         corpus_ref: None,
     }];
-    let preamble = build_deconstructive_preamble(&parts);
+    let preamble = build_aporia_preamble(&parts);
     assert!(
         preamble.contains("session-node:"),
         "preamble must contain 'session-node:'"
@@ -233,7 +233,7 @@ fn composed_part_domain_renders_unchanged() {
         weight: 0.0,
         corpus_ref: None,
     }];
-    let preamble = build_deconstructive_preamble(&parts);
+    let preamble = build_aporia_preamble(&parts);
     assert!(
         preamble.contains("[domain: auth-service]"),
         "domain part must render as '[domain: <name>]', got:\n{}", preamble

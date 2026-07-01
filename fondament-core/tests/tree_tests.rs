@@ -33,16 +33,16 @@ fn returns_none_for_unknown_id() {
 }
 
 #[test]
-fn deconstructive_discipline_has_modifier_true() {
+fn aporia_discipline_has_modifier_true() {
     let dir = TempDir::new().unwrap();
-    write_file(&dir, "disciplines/deconstructive.yaml", r#"
-id: disciplines/deconstructive
+    write_file(&dir, "disciplines/aporia.yaml", r#"
+id: disciplines/aporia
 kind: discipline
 modifier: true
 "#);
     let tree = DefinitionTree::load(dir.path()).unwrap();
-    let def = tree.get("disciplines/deconstructive").unwrap();
-    assert!(def.modifier, "deconstructive must have modifier: true");
+    let def = tree.get("disciplines/aporia").unwrap();
+    assert!(def.modifier, "aporia must have modifier: true");
 }
 
 #[test]

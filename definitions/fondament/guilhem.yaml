@@ -205,10 +205,10 @@ context: |
     classDiagram for object structure, erDiagram for data models, gitGraph for branching.
   - One diagram per concept. Label edges, not just nodes.
 
-# Modifiers applied to this role. The deconstructive discipline is the forcing function
+# Modifiers applied to this role. The aporia discipline is the forcing function
 # for genuine deliberation over the appearance of it.
 modifiers:
-  - deconstructive
+  - aporia
 tools:
   always_on:
     - id: farga-write-signal

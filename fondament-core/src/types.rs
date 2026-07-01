@@ -99,7 +99,7 @@ pub struct StructuredReasoning {
 }
 
 impl StructuredReasoning {
-    /// Derive intensity from number of composed parts (deconstructive path).
+    /// Derive intensity from number of composed parts (aporia path).
     pub fn from_parts_count(n: usize) -> Self {
         let intensity = match n {
             0..=1 => ReasoningIntensity::Low,
@@ -137,7 +137,7 @@ pub struct ResolvedAgent {
     pub tools: Vec<crate::tools::ToolDefinition>,
     pub jit_tools: Vec<crate::tools::ToolDefinition>,
     pub default_model: ModelId,
-    /// Set when the deconstructive modifier is active. Dispatch translates
+    /// Set when the aporia modifier is active. Dispatch translates
     /// this to provider-specific reasoning params (Anthropic: budget_tokens;
     /// Gemini/OpenAI-o: gracefully dropped — they reason natively).
     pub structured_reasoning: Option<StructuredReasoning>,

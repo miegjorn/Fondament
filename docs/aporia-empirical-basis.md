@@ -1,9 +1,9 @@
-# Deconstructive vs. Crystallization — Empirical Basis
+# Aporia vs. Crystallization — Empirical Basis
 
-This document backs the claim in `packages/deconstructive/plugin.toml`
+This document backs the claim in `packages/aporia/plugin.toml`
 ("Empirically outperforms crystallization in all tested comparisons") with
 the experiments that produced it. It is evidence, not a plan — see
-`docs/superpowers/plans/2026-06-18-deconstructive-discipline.md` for how
+`docs/superpowers/plans/2026-06-18-aporia-discipline.md` for how
 the discipline itself was implemented.
 
 ## The question
@@ -13,10 +13,10 @@ answers:
 
 - **Crystallization** — pre-synthesize the competing positions into a short
   "here's the tension" summary, then ask the question. This is what the
-  `deconstructive` discipline replaced.
+  `aporia` discipline replaced.
 - **Deconstruction (raw voices)** — inject the competing positions
   themselves, unresolved, and let the model do the synthesis work live,
-  inside extended thinking. This is what `deconstructive` does: the
+  inside extended thinking. This is what `aporia` does: the
   resolver-generated preamble lists the agent's actual composed parts and
   instructs it to become each one, name the tensions, and recompose.
 
@@ -53,7 +53,7 @@ integration), and an overall 0–10 score.
 | 4 | 3 harder, more contested questions (agent goal self-revision, diffusion of responsibility, predictive policing bias) | Sonnet 4.6 | The "A/B skip thinking" pattern did **not** track designed difficulty — one case triggered substantial baseline thinking (575w), two did not (24–27w), independent of how hard the question was meant to be. C won or tied in every case; B never won outright. |
 | 5 | Stress test: degrade the crystallization itself (vague + quietly wrong) on the 2 cases where B had scored competitively | Sonnet 4.6 | Scores held (+1, −1 — within noise). The model **explicitly audited and corrected** the bad synthesis before reasoning, rather than being misled by it or ignoring it. Crystallization *content* quality is not load-bearing — but correcting a wrong synthesis costs about as much thinking as reasoning from raw material, eliminating B's presumed cost advantage whenever the synthesis is wrong. |
 | 6 | Cross-model: identity architecture + diffusion of responsibility | Haiku 4.5, Sonnet 4.6, Opus 4.8 | C tied or beat B in all 6 model×case cells, never lost. The "skip thinking" behavior generalizes across tiers and gets **more pronounced with capability** — Opus produced literally 0 thinking words on 3 of 6 baseline/crystallization cells (verified not a display bug — the visible answer was still a full, coherent response). C was the only condition with nonzero thinking in every cell tested. |
-| 7 | Context-graph concept validation (5 structural claims) | Sonnet 4.6 | Not an A/B/C run — validates the multi-layer graph representation used by the deconstructive preamble's frontier-node injection. See `Amassada/docs/context-graph-empirical-basis.md`. |
+| 7 | Context-graph concept validation (5 structural claims) | Sonnet 4.6 | Not an A/B/C run — validates the multi-layer graph representation used by the aporia preamble's frontier-node injection. See `Amassada/docs/context-graph-empirical-basis.md`. |
 | 8 | Cross-provider: same two cases as exp 6, Gemini 2.5 Pro vs Sonnet 4.6; plus a mixed cross-consultation condition | Gemini 2.5 Pro, Sonnet 4.6 | C tied or beat B in all 4 graded model×case cells — zero B wins. **Gemini A→C gap is the largest observed** (A=3–4, C=7–8), suggesting Gemini's baseline reasoning is weaker but its ceiling matches Claude once raw voices are injected. Mixed cross-consultation (both models reason independently on C, Sonnet meta-synthesises) matched the best pure-C score on one case, fell below on the other — adding novelty (rated "high" both times) but not score. See confound note below. |
 
 **Running tally:** across experiments 2–6 and 8 (17 graded head-to-head
@@ -125,10 +125,10 @@ Haiku matched Sonnet's and Opus's scores in the raw-voices condition at
 roughly 1/5–1/14 the cost and ~3x the speed. The effect is not gated
 behind an expensive model tier.
 
-## What this means for the `deconstructive` discipline
+## What this means for the `aporia` discipline
 
 - **Raw decomposition, not pre-synthesis, is the right default mechanism.**
-  This is why the discipline's preamble (`build_deconstructive_preamble` in
+  This is why the discipline's preamble (`build_aporia_preamble` in
   `fondament-core/src/resolver.rs`) lists the agent's actual composed parts
   verbatim and instructs it to "become each part sequentially," rather than
   handing it a pre-resolved summary of how those parts relate.
@@ -155,7 +155,7 @@ behind an expensive model tier.
 ## What experiment 8 adds to the implications
 
 - **The finding is provider-agnostic.** C > B holds for Gemini 2.5 Pro with
-  the same strength as for Claude. The deconstructive discipline's preamble
+  the same strength as for Claude. The aporia discipline's preamble
   does not depend on Anthropic's extended thinking API to produce the effect —
   it works on any model that can reason about injected positions.
 - **Gemini needs the voices more.** The A→C score jump is 4–5 points for
@@ -184,7 +184,7 @@ Sonnet, Opus, Gemini 2.5 Pro), one grader model (`claude-opus-4-8`),
 word-count and tokenizer-based cost estimates rather than live `usage`
 capture for the model-comparison pass. The Gemini condition introduces a
 confound (output text vs hidden thinking trace — see Experiment 8 detail
-above). Treat the "deconstructive / raw voices always wins" result as a
+above). Treat the "aporia / raw voices always wins" result as a
 strong, reproducible prior — not as a closed question. It has survived every
 stress test thrown at it (model tier, question type, designed difficulty,
 deliberately corrupted input, cross-provider), which is more than most

@@ -4,7 +4,7 @@ use crate::error::{FondamentError, Result};
 
 /// Discipline names that act as reasoning modifiers rather than domain/corpus identifiers.
 /// These are stripped out of stance position during parsing.
-pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["deconstructive"];
+pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["aporia"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CompositionAddress {

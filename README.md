@@ -68,7 +68,7 @@ fondament/
 │           └── sweep.rs        # fondament sweep
 ├── definitions/                # the primitive tree
 │   ├── disciplines/            # atomic horizontal knowledge domains
-│   │   ├── deconstructive.yaml # modifier discipline — no context, injects preamble behaviour
+│   │   ├── aporia.yaml # modifier discipline — no context, injects preamble behaviour
 │   │   ├── rust-async.yaml
 │   │   └── data/
 │   │       └── db/
@@ -85,9 +85,9 @@ fondament/
 │       └── projects/           # kind: project-composition — concrete instantiated project agents
 │           └── example-agent.yaml
 └── packages/                   # Cor plugin packages (installable via `cor install`)
-    └── deconstructive/
+    └── aporia/
         ├── plugin.toml         # Cor manifest (id, kind, compatibility, artifact, install)
-        └── deconstructive.yaml # installable artifact
+        └── aporia.yaml # installable artifact
 ```
 
 ---
@@ -214,15 +214,15 @@ The `default_model` on a discipline sets the cognitive load baseline for that do
 
 A special class of discipline that changes **how prompt assembly behaves** rather than contributing corpus content. Modifier disciplines have `modifier: true` and no `context` field. They are referenced in composition addresses alongside a `+` qualifier and are never walked as corpus layers — the resolver detects their presence upfront and applies their behaviour as a side-effect of assembly.
 
-The only built-in modifier discipline is `deconstructive`:
+The only built-in modifier discipline is `aporia`:
 
 ```yaml
-id: disciplines/deconstructive
+id: disciplines/aporia
 kind: discipline
 modifier: true
 ```
 
-When `deconstructive` is active the resolver:
+When `aporia` is active the resolver:
 1. Generates a preamble that lists the agent's actual composed parts (disciplines + stance by name)
 2. Injects that preamble as the **first** layer of the system prompt — before org, initiative, and domain context
 3. Sets `thinking_budget` on `ResolvedAgent` so the dispatch layer can enable extended thinking
@@ -243,7 +243,7 @@ synthesis), raw-voice injection tied or beat pre-synthesized
 crystallization in every comparison and never lost. It also held up as the
 cheapest and fastest option at the Haiku tier, so the mechanism is not
 gated behind an expensive model. Full methodology, results tables, and
-limitations: [`docs/deconstructive-empirical-basis.md`](docs/deconstructive-empirical-basis.md).
+limitations: [`docs/aporia-empirical-basis.md`](docs/aporia-empirical-basis.md).
 
 ### Practice
 
@@ -372,7 +372,7 @@ tools:
 
 A concrete instantiation of a project agent. Uses a `parts:` list to assemble context from multiple sources (`inline` for static text, `farga` to pull live project context at spawn time). The `model:` field sets the composition model and is validated separately from `default_model`. The `name:` and `description:` fields are human-readable metadata.
 
-To enable the deconstructive modifier, add it via the `CompositionAddress` at dispatch time (e.g. `fondament/projects/example-agent+deconstructive`) — it is not controlled by a field in the definition file.
+To enable the aporia modifier, add it via the `CompositionAddress` at dispatch time (e.g. `fondament/projects/example-agent+aporia`) — it is not controlled by a field in the definition file.
 
 ```yaml
 id: fondament/projects/example-agent
@@ -402,12 +402,12 @@ fondament/<role-id>                          # references a Fondament role direc
 <project>+<stance>                           # Farga project context + stance (no facet)
 ```
 
-Modifier disciplines (e.g. `deconstructive`) stack before the stance with an additional `+`:
+Modifier disciplines (e.g. `aporia`) stack before the stance with an additional `+`:
 
 ```
-fondament/<role-id>+deconstructive           # Role + modifier, no stance
-fondament/<role-id>+deconstructive+<stance>  # Role + modifier + stance override
-<project>/<facet>+deconstructive+<stance>    # Composed + modifier + stance
+fondament/<role-id>+aporia           # Role + modifier, no stance
+fondament/<role-id>+aporia+<stance>  # Role + modifier + stance override
+<project>/<facet>+aporia+<stance>    # Composed + modifier + stance
 ```
 
 Examples:
@@ -416,10 +416,10 @@ Examples:
 |---|---|---|
 | `fondament/security-sre` | `Role` | Resolve the `roles/security-sre` definition directly |
 | `fondament/app-architect+adversarial` | `Role` | As above, stance override to `adversarial` |
-| `fondament/app-architect+deconstructive` | `Role` | As above, with deconstructive preamble injection and extended thinking enabled |
-| `fondament/app-architect+deconstructive+adversarial` | `Role` | Modifier + stance override combined |
+| `fondament/app-architect+aporia` | `Role` | As above, with aporia preamble injection and extended thinking enabled |
+| `fondament/app-architect+aporia+adversarial` | `Role` | Modifier + stance override combined |
 | `acme-auth/auth+adversarial` | `Composed` | Fetch `acme-auth` project context from Farga, narrow to `auth` facet, apply `adversarial` stance |
-| `acme-auth/auth+deconstructive+adversarial` | `Composed` | As above, with deconstructive modifier |
+| `acme-auth/auth+aporia+adversarial` | `Composed` | As above, with aporia modifier |
 
 The Rust enum:
 
@@ -427,19 +427,19 @@ The Rust enum:
 pub enum CompositionAddress {
     Role {
         role: String,
-        modifiers: Vec<String>,          // e.g. ["deconstructive"]
+        modifiers: Vec<String>,          // e.g. ["aporia"]
         stance_override: Option<String>,
     },
     Composed {
         project: String,
         facet: Option<String>,
-        modifiers: Vec<String>,          // e.g. ["deconstructive"]
+        modifiers: Vec<String>,          // e.g. ["aporia"]
         stance: String,
     },
 }
 
 /// Discipline names that route to `modifiers` rather than `stance` during parsing.
-pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["deconstructive"];
+pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["aporia"];
 ```
 
 Parsing rules (`FromStr`):
@@ -458,7 +458,7 @@ Parsing rules (`FromStr`):
 `resolver::resolve` assembles a `ResolvedAgent` by stacking context layers in this order:
 
 ```
-0. Deconstructive preamble — injected first when the address carries the deconstructive modifier;
+0. Aporia preamble — injected first when the address carries the aporia modifier;
                               lists the agent's composed parts and instructs internal decomposition
                               before collapse (invisible to end users — runs in extended thinking)
 1. Org layer               — Farga: culture, standing rules, org-wide constraints
@@ -473,7 +473,7 @@ Parsing rules (`FromStr`):
 
 The extends chain is walked iteratively with cycle detection. If `CircularExtends` is detected, resolution fails immediately with a `FondamentError::CircularExtends` error rather than looping. The `default_model` is updated as each definition in the chain is visited — the last non-`None` value wins, so a role's `default_model` overrides its disciplines' baselines.
 
-During resolution, the resolver collects a `parts` list of named components (non-modifier disciplines, stance) for use in the deconstructive preamble. `thinking_budget` is computed as `(parts.len() * 3000).clamp(3000, 10000)` and returned on `ResolvedAgent`; the dispatch layer (Charradissa) is responsible for passing it to the Anthropic API as `thinking.budget_tokens`.
+During resolution, the resolver collects a `parts` list of named components (non-modifier disciplines, stance) for use in the aporia preamble. `thinking_budget` is computed as `(parts.len() * 3000).clamp(3000, 10000)` and returned on `ResolvedAgent`; the dispatch layer (Charradissa) is responsible for passing it to the Anthropic API as `thinking.budget_tokens`.
 
 The `ResolvedAgent` returned:
 
@@ -483,7 +483,7 @@ pub struct ResolvedAgent {
     pub tools: Vec<ToolDefinition>,     // always_on tools from all definitions in the chain
     pub jit_tools: Vec<ToolDefinition>, // jit tools from all definitions in the chain
     pub default_model: ModelId,         // final model after chain traversal
-    pub thinking_budget: Option<u32>,   // set when deconstructive modifier is active
+    pub thinking_budget: Option<u32>,   // set when aporia modifier is active
 }
 ```
 
@@ -599,7 +599,7 @@ prebuilt binary is republished).
 | `description-present` | Fail | `description` must be present and non-empty. |
 | `parts-present` | Fail | `parts` must be a non-empty list. |
 | `farga-part-project` | Fail | Each part with `source: farga` must carry a non-empty `project`. |
-| `deconstructive-field` | Warn | `deconstructive` is a spawn-time modifier, not a composition field — serde drops it silently, so it has no effect. Warned, not failed, so existing files are not blocked. |
+| `aporia-field` | Warn | `aporia` is a spawn-time modifier, not a composition field — serde drops it silently, so it has no effect. Warned, not failed, so existing files are not blocked. |
 
 `model` is optional. The id-path convention is derived from the nearest ancestor
 `definitions/` directory rather than hardcoded, so the rules apply unchanged to the
@@ -808,7 +808,7 @@ let agent: ResolvedAgent = watched.fondament.resolve(&address).await?;
 // Use agent.system_prompt, agent.default_model, agent.tools, agent.jit_tools
 // to configure the outgoing Claude API call.
 // If agent.thinking_budget is Some(n), pass thinking: { type: "enabled", budget_tokens: n }
-// to the Anthropic API (deconstructive modifier is active).
+// to the Anthropic API (aporia modifier is active).
 ```
 
 The `WatchedFondament` must be kept alive for the duration of the daemon. The `WatchHandle` inside it owns the file-system watcher thread; dropping it stops hot-reload.
@@ -849,7 +849,7 @@ Tests live in `fondament-core/tests/`. The `tempfile` crate is used to create is
 | `address_tests.rs` | `CompositionAddress` parsing and `Display` round-trips for both `Role` and `Composed` variants; modifier-only addresses; modifier+stance combined; error cases (empty path, double `+`, two non-modifier stances). |
 | `tree_tests.rs` | `DefinitionTree::load` scans nested directories; `get` returns the correct definition; unknown IDs return `None`; `modifier: true` parses correctly; disciplines without the field default to `modifier: false`. |
 | `lint_tests.rs` | A valid definition passes lint with no failures; an invalid `default_model` produces a `Fail` result. |
-| `resolver_tests.rs` | `Role` and `Composed` addresses resolve to correctly assembled system prompts; stance context included for both address forms; deconstructive modifier injects preamble before domain content, sets `thinking_budget`, and scales budget with part count; no preamble or budget without the modifier. Uses a `MockFarga` that returns fixed content. |
+| `resolver_tests.rs` | `Role` and `Composed` addresses resolve to correctly assembled system prompts; stance context included for both address forms; aporia modifier injects preamble before domain content, sets `thinking_budget`, and scales budget with part count; no preamble or budget without the modifier. Uses a `MockFarga` that returns fixed content. |
 
 Run all tests:
 
@@ -910,7 +910,7 @@ cargo test --test address_tests
 curl http://fondament:7800/health
 curl http://fondament:7800/component-agents
 curl http://fondament:7800/resolve/fondament/farga-agent
-curl http://fondament:7800/resolve/fondament/app-architect+deconstructive
+curl http://fondament:7800/resolve/fondament/app-architect+aporia
 ```
 
 ---

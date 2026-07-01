@@ -1,10 +1,10 @@
-# Deconstructive Discipline Implementation Plan
+# Aporia Discipline Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a `deconstructive` modifier discipline to Fondament that injects a preamble into the agent's system prompt instructing internal multi-voice decomposition before collapse, enables extended thinking on the API call, and is packaged as a Cor installable plugin.
+**Goal:** Add a `aporia` modifier discipline to Fondament that injects a preamble into the agent's system prompt instructing internal multi-voice decomposition before collapse, enables extended thinking on the API call, and is packaged as a Cor installable plugin.
 
-**Architecture:** Three layers of change — (1) YAML definition + `DefinitionFile.modifier` flag to mark it as non-corpus; (2) `CompositionAddress` gains `modifiers: Vec<String>` so `+deconstructive` stacks before a stance without being treated as one; (3) the resolver detects the modifier and prepends a generated preamble listing the agent's actual parts, then sets `thinking_budget` on `ResolvedAgent`. Nothing in Amassada, Charradissa, or Farga changes.
+**Architecture:** Three layers of change — (1) YAML definition + `DefinitionFile.modifier` flag to mark it as non-corpus; (2) `CompositionAddress` gains `modifiers: Vec<String>` so `+aporia` stacks before a stance without being treated as one; (3) the resolver detects the modifier and prepends a generated preamble listing the agent's actual parts, then sets `thinking_budget` on `ResolvedAgent`. Nothing in Amassada, Charradissa, or Farga changes.
 
 **Tech Stack:** Rust, serde/serde_yaml (already in workspace), Fondament workspace at `/Users/bedardpl/project/Fondament`.
 
@@ -65,7 +65,7 @@ pub struct ResolvedAgent {
 4. Fondament definition layers (extends chain walk)
 5. Stance context (from tree)
 
-→ Deconstructive preamble must be inserted BEFORE all of these.
+→ Aporia preamble must be inserted BEFORE all of these.
 
 ### Cor plugin format (cor-core/src/manifest.rs)
 
@@ -82,16 +82,16 @@ Stored in `plugin.toml` (TOML format). Discipline plugins install to `Fondament/
 
 ---
 
-## Task 1: `deconstructive.yaml` + `DefinitionFile.modifier` field
+## Task 1: `aporia.yaml` + `DefinitionFile.modifier` field
 
 **Files:**
-- Create: `Fondament/definitions/disciplines/deconstructive.yaml`
+- Create: `Fondament/definitions/disciplines/aporia.yaml`
 - Modify: `Fondament/fondament-core/src/definition.rs`
 - Modify: `Fondament/fondament-core/tests/tree_tests.rs`
 
 ### Why `modifier: bool` matters
 
-A modifier discipline does NOT contribute corpus content to the agent — its presence changes HOW the prompt is assembled. The field distinguishes `deconstructive` (modifier=true, no context) from `disciplines/rust-async` (modifier=false, has context). The resolver skips modifier disciplines in the extends chain walk and handles them separately.
+A modifier discipline does NOT contribute corpus content to the agent — its presence changes HOW the prompt is assembled. The field distinguishes `aporia` (modifier=true, no context) from `disciplines/rust-async` (modifier=false, has context). The resolver skips modifier disciplines in the extends chain walk and handles them separately.
 
 - [ ] **Step 1: Write failing tree tests**
 
@@ -99,16 +99,16 @@ Append to `Fondament/fondament-core/tests/tree_tests.rs`:
 
 ```rust
 #[test]
-fn deconstructive_discipline_has_modifier_true() {
+fn aporia_discipline_has_modifier_true() {
     let dir = TempDir::new().unwrap();
-    write_file(&dir, "disciplines/deconstructive.yaml", r#"
-id: disciplines/deconstructive
+    write_file(&dir, "disciplines/aporia.yaml", r#"
+id: disciplines/aporia
 kind: discipline
 modifier: true
 "#);
     let tree = DefinitionTree::load(dir.path()).unwrap();
-    let def = tree.get("disciplines/deconstructive").unwrap();
-    assert!(def.modifier, "deconstructive must have modifier: true");
+    let def = tree.get("disciplines/aporia").unwrap();
+    assert!(def.modifier, "aporia must have modifier: true");
 }
 
 #[test]
@@ -167,17 +167,17 @@ impl DefinitionFile {
 }
 ```
 
-- [ ] **Step 4: Create deconstructive.yaml**
+- [ ] **Step 4: Create aporia.yaml**
 
-Create `Fondament/definitions/disciplines/deconstructive.yaml`:
+Create `Fondament/definitions/disciplines/aporia.yaml`:
 
 ```yaml
-id: disciplines/deconstructive
+id: disciplines/aporia
 kind: discipline
 modifier: true
 ```
 
-No `context` field — the deconstructive discipline injects a dynamically generated preamble
+No `context` field — the aporia discipline injects a dynamically generated preamble
 (computed from the agent's actual composition) rather than static corpus content.
 
 - [ ] **Step 5: Run tree tests**
@@ -191,7 +191,7 @@ Expected: 4 tree tests pass (2 original + 2 new). All 10 baseline tests still pa
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/bedardpl/project/Fondament && git add definitions/disciplines/deconstructive.yaml fondament-core/src/definition.rs fondament-core/tests/tree_tests.rs && git commit -m "feat: add deconstructive modifier discipline and DefinitionFile.modifier field"
+cd /Users/bedardpl/project/Fondament && git add definitions/disciplines/aporia.yaml fondament-core/src/definition.rs fondament-core/tests/tree_tests.rs && git commit -m "feat: add aporia modifier discipline and DefinitionFile.modifier field"
 ```
 
 ---
@@ -210,17 +210,17 @@ New addresses the parser must handle:
 | Address | Variant | Result |
 |---|---|---|
 | `fondament/app-architect` | Role | role="fondament/app-architect", modifiers=[], stance_override=None |
-| `fondament/roles/security-sre+deconstructive` | Role | role="fondament/roles/security-sre", modifiers=["deconstructive"], stance_override=None |
+| `fondament/roles/security-sre+aporia` | Role | role="fondament/roles/security-sre", modifiers=["aporia"], stance_override=None |
 | `acme-auth/auth+adversarial` | Composed | project="acme-auth", facet="auth", modifiers=[], stance="adversarial" |
-| `acme-auth/auth+deconstructive+adversarial` | Composed | project="acme-auth", facet="auth", modifiers=["deconstructive"], stance="adversarial" |
-| `acme-auth/auth+deconstructive` | Role | role="acme-auth/auth", modifiers=["deconstructive"], stance_override=None |
+| `acme-auth/auth+aporia+adversarial` | Composed | project="acme-auth", facet="auth", modifiers=["aporia"], stance="adversarial" |
+| `acme-auth/auth+aporia` | Role | role="acme-auth/auth", modifiers=["aporia"], stance_override=None |
 
 The last case (modifier-only, non-fondament path) becomes `Role` because there is no stance — it still resolves against any tree entry named `acme-auth/auth` and Farga project layers are available separately.
 
 ### Known modifier list
 
 ```rust
-pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["deconstructive"];
+pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["aporia"];
 ```
 
 Parsing rule: split on ALL `+`; segments in `KNOWN_MODIFIER_DISCIPLINES` go to `modifiers`, others go to `stance` (error if two non-modifier `+` segments).
@@ -270,12 +270,12 @@ fn display_roundtrips() {
 }
 
 #[test]
-fn parses_role_with_deconstructive_modifier() {
-    let a: CompositionAddress = "fondament/roles/security-sre+deconstructive".parse().unwrap();
+fn parses_role_with_aporia_modifier() {
+    let a: CompositionAddress = "fondament/roles/security-sre+aporia".parse().unwrap();
     match &a {
         CompositionAddress::Role { role, modifiers, stance_override } => {
             assert_eq!(role, "fondament/roles/security-sre");
-            assert_eq!(modifiers, &["deconstructive"]);
+            assert_eq!(modifiers, &["aporia"]);
             assert!(stance_override.is_none());
         }
         _ => panic!("expected Role"),
@@ -284,12 +284,12 @@ fn parses_role_with_deconstructive_modifier() {
 
 #[test]
 fn parses_composed_with_modifier_and_stance() {
-    let a: CompositionAddress = "acme-auth/auth+deconstructive+adversarial".parse().unwrap();
+    let a: CompositionAddress = "acme-auth/auth+aporia+adversarial".parse().unwrap();
     match &a {
         CompositionAddress::Composed { project, facet, modifiers, stance } => {
             assert_eq!(project, "acme-auth");
             assert_eq!(facet.as_deref(), Some("auth"));
-            assert_eq!(modifiers, &["deconstructive"]);
+            assert_eq!(modifiers, &["aporia"]);
             assert_eq!(stance, "adversarial");
         }
         _ => panic!("expected Composed"),
@@ -299,11 +299,11 @@ fn parses_composed_with_modifier_and_stance() {
 #[test]
 fn parses_modifier_only_non_fondament_as_role() {
     // No stance means no Composed — falls through to Role
-    let a: CompositionAddress = "acme-auth/auth+deconstructive".parse().unwrap();
+    let a: CompositionAddress = "acme-auth/auth+aporia".parse().unwrap();
     match &a {
         CompositionAddress::Role { role, modifiers, stance_override } => {
             assert_eq!(role, "acme-auth/auth");
-            assert_eq!(modifiers, &["deconstructive"]);
+            assert_eq!(modifiers, &["aporia"]);
             assert!(stance_override.is_none());
         }
         _ => panic!("expected Role (modifier-only, no stance)"),
@@ -313,8 +313,8 @@ fn parses_modifier_only_non_fondament_as_role() {
 #[test]
 fn display_roundtrips_with_modifier() {
     for s in [
-        "fondament/roles/security-sre+deconstructive",
-        "acme-auth/auth+deconstructive+adversarial",
+        "fondament/roles/security-sre+aporia",
+        "acme-auth/auth+aporia+adversarial",
     ] {
         let a: CompositionAddress = s.parse().unwrap();
         assert_eq!(a.to_string(), s, "display must roundtrip for {}", s);
@@ -341,7 +341,7 @@ use crate::error::{FondamentError, Result};
 
 /// Discipline names that act as reasoning modifiers rather than domain/corpus identifiers.
 /// These are stripped out of stance position during parsing.
-pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["deconstructive"];
+pub const KNOWN_MODIFIER_DISCIPLINES: &[&str] = &["aporia"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CompositionAddress {
@@ -432,7 +432,7 @@ pub struct ResolvedAgent {
     pub tools: Vec<crate::tools::ToolDefinition>,
     pub jit_tools: Vec<crate::tools::ToolDefinition>,
     pub default_model: ModelId,
-    /// Set when the deconstructive modifier is active.
+    /// Set when the aporia modifier is active.
     /// Callers must pass this to the Anthropic API as thinking.budget_tokens.
     pub thinking_budget: Option<u32>,
 }
@@ -495,11 +495,11 @@ cd /Users/bedardpl/project/Fondament && git add fondament-core/src/address.rs fo
 **Files:**
 - Modify: `Fondament/fondament-core/src/resolver.rs`
 - Modify: `Fondament/fondament-core/tests/resolver_tests.rs`
-- Create: `Fondament/packages/deconstructive/plugin.toml`
+- Create: `Fondament/packages/aporia/plugin.toml`
 
 ### What the resolver adds
 
-When `is_deconstructive` is true:
+When `is_aporia` is true:
 1. While walking the extends chain, collect `(kind, name)` pairs for non-modifier disciplines
 2. Collect the stance (if any)
 3. After assembly: build a preamble from the collected parts list
@@ -509,7 +509,7 @@ When `is_deconstructive` is true:
 ### Preamble format
 
 ```
---- injected by deconstructive discipline ---
+--- injected by aporia discipline ---
 You are composed of the following parts:
   - [discipline: system-design]
   - [stance: adversarial]
@@ -531,13 +531,13 @@ The internal debate is yours alone — it does not appear in output.
 Append to `Fondament/fondament-core/tests/resolver_tests.rs`:
 
 ```rust
-fn make_tree_with_deconstructive() -> (DefinitionTree, TempDir) {
+fn make_tree_with_aporia() -> (DefinitionTree, TempDir) {
     let dir = TempDir::new().unwrap();
     let files: &[(&str, &str)] = &[
         ("disciplines/system-design.yaml",
          "id: disciplines/system-design\nkind: discipline\ncontext: \"You architect systems.\"\n"),
-        ("disciplines/deconstructive.yaml",
-         "id: disciplines/deconstructive\nkind: discipline\nmodifier: true\n"),
+        ("disciplines/aporia.yaml",
+         "id: disciplines/aporia\nkind: discipline\nmodifier: true\n"),
         ("roles/platform-architect.yaml",
          "id: fondament/platform-architect\nkind: role\nextends: [disciplines/system-design]\ndefault_model: claude-sonnet-4-6\ncontext: \"You are a platform architect.\"\n"),
         ("stances/adversarial.yaml",
@@ -553,12 +553,12 @@ fn make_tree_with_deconstructive() -> (DefinitionTree, TempDir) {
 }
 
 #[tokio::test]
-async fn deconstructive_modifier_injects_preamble() {
-    let (tree, _dir) = make_tree_with_deconstructive();
-    let address: CompositionAddress = "fondament/platform-architect+deconstructive".parse().unwrap();
+async fn aporia_modifier_injects_preamble() {
+    let (tree, _dir) = make_tree_with_aporia();
+    let address: CompositionAddress = "fondament/platform-architect+aporia".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
     assert!(
-        agent.system_prompt.contains("deconstructive discipline"),
+        agent.system_prompt.contains("aporia discipline"),
         "preamble header must appear in system_prompt"
     );
     assert!(
@@ -566,34 +566,34 @@ async fn deconstructive_modifier_injects_preamble() {
         "preamble instructions must appear in system_prompt"
     );
     // Preamble must come BEFORE domain content
-    let preamble_pos = agent.system_prompt.find("deconstructive discipline").unwrap();
+    let preamble_pos = agent.system_prompt.find("aporia discipline").unwrap();
     let domain_pos = agent.system_prompt.find("platform architect").unwrap();
     assert!(preamble_pos < domain_pos, "preamble must precede domain content");
 }
 
 #[tokio::test]
-async fn deconstructive_modifier_sets_thinking_budget() {
-    let (tree, _dir) = make_tree_with_deconstructive();
-    let address: CompositionAddress = "fondament/platform-architect+deconstructive".parse().unwrap();
+async fn aporia_modifier_sets_thinking_budget() {
+    let (tree, _dir) = make_tree_with_aporia();
+    let address: CompositionAddress = "fondament/platform-architect+aporia".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
-    assert!(agent.thinking_budget.is_some(), "thinking_budget must be set with deconstructive modifier");
+    assert!(agent.thinking_budget.is_some(), "thinking_budget must be set with aporia modifier");
     let budget = agent.thinking_budget.unwrap();
     assert!(budget >= 3_000, "minimum budget is 3000 tokens");
     assert!(budget <= 10_000, "budget is capped at 10000 tokens");
 }
 
 #[tokio::test]
-async fn without_deconstructive_no_preamble_no_budget() {
-    let (tree, _dir) = make_tree_with_deconstructive();
+async fn without_aporia_no_preamble_no_budget() {
+    let (tree, _dir) = make_tree_with_aporia();
     let address: CompositionAddress = "fondament/platform-architect".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
     assert!(
-        !agent.system_prompt.contains("deconstructive discipline"),
-        "preamble must not appear without deconstructive modifier"
+        !agent.system_prompt.contains("aporia discipline"),
+        "preamble must not appear without aporia modifier"
     );
     assert!(
         agent.thinking_budget.is_none(),
-        "thinking_budget must be None without deconstructive modifier"
+        "thinking_budget must be None without aporia modifier"
     );
 }
 ```
@@ -601,7 +601,7 @@ async fn without_deconstructive_no_preamble_no_budget() {
 - [ ] **Step 2: Run to verify failure**
 
 ```bash
-cd /Users/bedardpl/project/Fondament && cargo test -p fondament-core deconstructive 2>&1 | grep -E "FAILED|^error" | head -5
+cd /Users/bedardpl/project/Fondament && cargo test -p fondament-core aporia 2>&1 | grep -E "FAILED|^error" | head -5
 ```
 
 Expected: FAIL — preamble not injected, thinking_budget always None.
@@ -628,13 +628,13 @@ pub async fn resolve(
     let mut default_model = ModelId::default();
     let mut always_on: Vec<ToolDefinition> = Vec::new();
     let mut jit_tools: Vec<ToolDefinition> = Vec::new();
-    // Collected for the deconstructive preamble: (kind, display_name)
+    // Collected for the aporia preamble: (kind, display_name)
     let mut collected_parts: Vec<(String, String)> = Vec::new();
 
-    // Detect deconstructive modifier upfront (avoids borrow conflict later)
-    let is_deconstructive = match address {
-        CompositionAddress::Role { modifiers, .. } => modifiers.iter().any(|m| m == "deconstructive"),
-        CompositionAddress::Composed { modifiers, .. } => modifiers.iter().any(|m| m == "deconstructive"),
+    // Detect aporia modifier upfront (avoids borrow conflict later)
+    let is_aporia = match address {
+        CompositionAddress::Role { modifiers, .. } => modifiers.iter().any(|m| m == "aporia"),
+        CompositionAddress::Composed { modifiers, .. } => modifiers.iter().any(|m| m == "aporia"),
     };
 
     // Layer 1: org context from Farga
@@ -682,7 +682,7 @@ pub async fn resolve(
         visited.insert(id.clone());
 
         if let Some(def) = tree.get(&id) {
-            // Collect non-modifier disciplines as parts for the deconstructive preamble
+            // Collect non-modifier disciplines as parts for the aporia preamble
             if def.kind == "discipline" && !def.modifier {
                 let part_name = id.strip_prefix("disciplines/").unwrap_or(&id).to_string();
                 collected_parts.push(("discipline".into(), part_name));
@@ -722,9 +722,9 @@ pub async fn resolve(
         }
     }
 
-    // Deconstructive preamble: inject FIRST if modifier is active
-    let thinking_budget = if is_deconstructive {
-        let preamble = build_deconstructive_preamble(&collected_parts);
+    // Aporia preamble: inject FIRST if modifier is active
+    let thinking_budget = if is_aporia {
+        let preamble = build_aporia_preamble(&collected_parts);
         layers.insert(0, preamble);
         let budget = (collected_parts.len() as u32 * 3_000).min(10_000).max(3_000);
         Some(budget)
@@ -741,9 +741,9 @@ pub async fn resolve(
     })
 }
 
-fn build_deconstructive_preamble(parts: &[(String, String)]) -> String {
+fn build_aporia_preamble(parts: &[(String, String)]) -> String {
     let mut preamble = String::from(
-        "--- injected by deconstructive discipline ---\nYou are composed of the following parts:\n"
+        "--- injected by aporia discipline ---\nYou are composed of the following parts:\n"
     );
     if parts.is_empty() {
         preamble.push_str("  - [role: this agent] — reason from your full context\n");
@@ -780,17 +780,17 @@ All 0 failures.
 - [ ] **Step 5: Create Cor plugin.toml**
 
 ```bash
-mkdir -p /Users/bedardpl/project/Fondament/packages/deconstructive
+mkdir -p /Users/bedardpl/project/Fondament/packages/aporia
 ```
 
-Create `Fondament/packages/deconstructive/plugin.toml`:
+Create `Fondament/packages/aporia/plugin.toml`:
 
 ```toml
 [plugin]
-id = "deconstructive"
+id = "aporia"
 version = "0.1.0"
 kind = "discipline"
-name = "Deconstructive"
+name = "Aporia"
 description = "A reasoning modifier that instructs agents to decompose into constituent parts before collapse. Enables extended thinking. Empirically outperforms crystallization in all tested comparisons."
 authors = ["Pierre-Luc Bedard <bedardpl@gmail.com>"]
 license = "MIT"
@@ -801,16 +801,16 @@ stack = "occitan"
 providers = ["anthropic"]
 
 [artifact]
-path = "deconstructive.yaml"
+path = "aporia.yaml"
 
 [install]
 target = "Fondament/definitions/disciplines/"
 ```
 
-Create `Fondament/packages/deconstructive/deconstructive.yaml` (copy of the discipline file — this is what `cor install` would unpack):
+Create `Fondament/packages/aporia/aporia.yaml` (copy of the discipline file — this is what `cor install` would unpack):
 
 ```yaml
-id: disciplines/deconstructive
+id: disciplines/aporia
 kind: discipline
 modifier: true
 ```
@@ -818,7 +818,7 @@ modifier: true
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/bedardpl/project/Fondament && git add fondament-core/src/resolver.rs fondament-core/tests/resolver_tests.rs packages/deconstructive/ && git commit -m "feat: inject deconstructive preamble and thinking budget in resolver; add Cor plugin package"
+cd /Users/bedardpl/project/Fondament && git add fondament-core/src/resolver.rs fondament-core/tests/resolver_tests.rs packages/aporia/ && git commit -m "feat: inject aporia preamble and thinking budget in resolver; add Cor plugin package"
 ```
 
 ---
@@ -829,12 +829,12 @@ cd /Users/bedardpl/project/Fondament && git add fondament-core/src/resolver.rs f
 
 | Spec requirement | Covered by |
 |---|---|
-| `fondament/disciplines/deconstructive.yaml` | Task 1 |
-| Detect deconstructive in address, inject preamble | Task 3 resolver |
+| `fondament/disciplines/aporia.yaml` | Task 1 |
+| Detect aporia in address, inject preamble | Task 3 resolver |
 | Preamble lists agent's actual parts (disciplines + stance) | Task 3 `collected_parts` |
 | Extended thinking budget — 3000 per part, capped at 10000 | Task 3 thinking_budget calc |
 | Modifier not treated as corpus/domain | Task 3 `if !def.modifier` guard |
-| `CompositionAddress` handles `+deconstructive+stance` | Task 2 parser |
+| `CompositionAddress` handles `+aporia+stance` | Task 2 parser |
 | Cor plugin package (`plugin.toml`) | Task 3 step 5 |
 
 **Placeholder scan:** None found.
@@ -843,7 +843,7 @@ cd /Users/bedardpl/project/Fondament && git add fondament-core/src/resolver.rs f
 - `CompositionAddress::Composed { modifiers, .. }` added in Task 2 → used in Task 3 resolver — consistent
 - `ResolvedAgent.thinking_budget: Option<u32>` added in Task 2 → set in Task 3 → tested in resolver_tests — consistent
 - `DefinitionFile.modifier: bool` added in Task 1 → checked as `!def.modifier` in Task 3 resolver → consistent
-- `build_deconstructive_preamble(parts: &[(String, String)])` defined and called in Task 3 within same file — consistent
+- `build_aporia_preamble(parts: &[(String, String)])` defined and called in Task 3 within same file — consistent
 - `collected_parts.push(("discipline".into(), part_name))` in resolver → displayed as `[discipline: X]` in preamble — consistent
 
 **Note on extended thinking and the API call:** `ResolvedAgent.thinking_budget` is a *signal* to the dispatch layer (Charradissa or whatever calls Fondament) to enable `thinking: { type: "enabled", budget_tokens: N }` on the Anthropic API request. This plan stops at making the budget available in `ResolvedAgent` — actually threading it into the API call is Charradissa's concern (dispatch.rs or tool_loop.rs). The plan does NOT implement that wiring to stay within scope.

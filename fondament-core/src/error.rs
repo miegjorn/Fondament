@@ -14,6 +14,11 @@ pub enum FondamentError {
     Yaml(#[from] serde_yaml::Error),
     #[error("farga error: {0}")]
     Farga(String),
+    /// Schema validation error — emitted before serde parsing when a definition
+    /// file violates a structural invariant (e.g. flat-string `always_on` entries).
+    /// Carries the file path and a human-readable description of the violation.
+    #[error("schema error in {0}: {1}")]
+    Schema(String, String),
 }
 
 pub type Result<T> = std::result::Result<T, FondamentError>;

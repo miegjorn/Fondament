@@ -4,8 +4,18 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'definitions/**'
+      - 'fondament-core/src/**'
+      - 'Dockerfile'
+      - '.github/workflows/build-guilhem.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'definitions/**'
+      - 'fondament-core/src/**'
+      - 'Dockerfile'
+      - '.github/workflows/build-guilhem.yml'
 
 permissions:
   contents: read

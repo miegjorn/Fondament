@@ -1,10 +1,27 @@
 name: Build & push
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'fondament-core/src/**'
+      - 'fondament-server/**'
+      - 'fondament-cli/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'Dockerfile'
+      - '.github/workflows/build.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'fondament-core/src/**'
+      - 'fondament-server/**'
+      - 'fondament-cli/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'Dockerfile'
+      - '.github/workflows/build.yml'
 
 permissions:
   contents: read

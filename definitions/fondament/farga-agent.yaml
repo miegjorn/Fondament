@@ -1,5 +1,5 @@
 id: fondament/farga-agent
-version: "1.5.0"
+version: "1.6.0"
 kind: component-agent
 component: farga
 default_model: claude-sonnet-4-6
@@ -67,8 +67,7 @@ context: |
 
 tools:
   always_on:
-    # Matrix MCP tools (Charradissa#23) — Matrix send authority + DM resolution so this
-    # component agent can speak in its DM with @guilhem. Served by Charradissa at /mcp.
+    # Matrix MCP tools — send authority and DM resolution for Guilhem communication.
     - id: matrix-send
       kind: mcp
       server: charradissa
@@ -85,6 +84,37 @@ tools:
       kind: mcp
       server: charradissa
       tool: matrix_request_approval
+    # Farga MCP tools — context orientation and memory persistence (Fondament#25).
+    # list_context_nodes + read_context_node: orient at session start, read component
+    # contexts before acting (required by issue queue protocol step 3).
+    # write_signal + search_signals: record decisions, search for relevant signals.
+    # get_discipline + write_discipline: retrieve and formalize Farga operating
+    # procedures in Farga's discipline registry.
+    - id: farga-list-context-nodes
+      kind: mcp
+      server: farga
+      tool: list_context_nodes
+    - id: farga-read-context-node
+      kind: mcp
+      server: farga
+      tool: read_context_node
+    - id: farga-write-signal
+      kind: mcp
+      server: farga
+      tool: write_signal
+    - id: farga-search-signals
+      kind: mcp
+      server: farga
+      tool: search_signals
+    - id: farga-get-discipline
+      kind: mcp
+      server: farga
+      tool: get_discipline
+    - id: farga-write-discipline
+      kind: mcp
+      server: farga
+      tool: write_discipline
+    # Nervi MCP tools — issue queue subscription and dispatch publishing.
     - id: nervi-publish
       kind: mcp
       server: nervi
@@ -93,6 +123,7 @@ tools:
       kind: mcp
       server: nervi
       tool: nervi_subscribe
+    # Dispatcher tools — agent invocation for delegated tasks.
     - id: dispatcher-invoke-agent
       kind: mcp
       server: dispatcher

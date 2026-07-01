@@ -3,7 +3,7 @@ use crate::error::{FondamentError, Result};
 use crate::farga::FargaReader;
 use crate::tools::ToolDefinition;
 use crate::tree::DefinitionTree;
-use crate::types::{ComposedPart, ModelId, PartKind, ResolvedAgent};
+use crate::types::{ComposedPart, ModelId, PartKind, ResolvedAgent, StructuredReasoning};
 
 pub async fn resolve(
     address: &CompositionAddress,
@@ -122,11 +122,10 @@ pub async fn resolve(
     }
 
     // Deconstructive preamble: inject as layer[0] when modifier is active
-    let thinking_budget = if is_deconstructive {
+    let structured_reasoning = if is_deconstructive {
         let preamble = build_deconstructive_preamble(&collected_parts);
         layers.insert(0, preamble);
-        let budget = (collected_parts.len() as u32 * 3_000).clamp(3_000, 10_000);
-        Some(budget)
+        Some(StructuredReasoning::from_parts_count(collected_parts.len()))
     } else {
         None
     };
@@ -136,7 +135,7 @@ pub async fn resolve(
         tools: always_on,
         jit_tools,
         default_model,
-        thinking_budget,
+        structured_reasoning,
     })
 }
 

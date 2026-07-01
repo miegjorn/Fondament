@@ -129,18 +129,18 @@ async fn deconstructive_modifier_injects_preamble_before_domain_content() {
 }
 
 #[tokio::test]
-async fn deconstructive_modifier_sets_thinking_budget() {
+async fn deconstructive_modifier_sets_structured_reasoning() {
     let (tree, _dir) = make_tree_with_deconstructive();
     let address: CompositionAddress = "fondament/platform-architect+deconstructive".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
-    assert!(agent.thinking_budget.is_some(), "thinking_budget must be set with deconstructive modifier");
-    let budget = agent.thinking_budget.unwrap();
-    assert!(budget >= 3_000, "minimum budget is 3000 tokens");
-    assert!(budget <= 10_000, "budget is capped at 10000 tokens");
+    assert!(agent.structured_reasoning.is_some(), "structured_reasoning must be set with deconstructive modifier");
+    let budget = agent.structured_reasoning.unwrap().anthropic_budget();
+    assert!(budget >= 3_000, "minimum anthropic budget is 3000 tokens");
+    assert!(budget <= 10_000, "anthropic budget is capped at 10000 tokens");
 }
 
 #[tokio::test]
-async fn without_deconstructive_no_preamble_no_budget() {
+async fn without_deconstructive_no_preamble_no_reasoning() {
     let (tree, _dir) = make_tree_with_deconstructive();
     let address: CompositionAddress = "fondament/platform-architect".parse().unwrap();
     let agent = resolve(&address, &tree, &MockFarga, "acme").await.unwrap();
@@ -149,8 +149,8 @@ async fn without_deconstructive_no_preamble_no_budget() {
         "preamble must not appear without deconstructive modifier"
     );
     assert!(
-        agent.thinking_budget.is_none(),
-        "thinking_budget must be None without deconstructive modifier"
+        agent.structured_reasoning.is_none(),
+        "structured_reasoning must be None without deconstructive modifier"
     );
 }
 
@@ -169,8 +169,8 @@ async fn deconstructive_with_stance_collects_stance_as_part() {
     // Preamble must be present (deconstructive active)
     assert!(agent.system_prompt.contains("deconstructive discipline"),
         "preamble must be injected");
-    // thinking_budget should be higher now: 1 discipline + 1 stance = 2 parts × 3000 = 6000
-    let budget = agent.thinking_budget.unwrap();
+    // 1 discipline + 1 stance = 2 parts → Medium → 6000 tokens at Anthropic
+    let budget = agent.structured_reasoning.unwrap().anthropic_budget();
     assert!(budget >= 6_000, "2 parts should yield at least 6000 budget tokens, got {}", budget);
 }
 

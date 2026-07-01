@@ -30,8 +30,8 @@ pub async fn run(defs: &Path, address: &str, farga_url: Option<&str>) -> anyhow:
 
     println!("=== System Prompt ===\n{}", agent.system_prompt);
     println!("\n=== Default Model ===\n{}", agent.default_model.0);
-    if let Some(budget) = agent.thinking_budget {
-        println!("\n=== Thinking Budget ===\n{} tokens", budget);
+    if let Some(sr) = agent.structured_reasoning {
+        println!("\n=== Structured Reasoning ===\n{:?} ({} anthropic tokens)", sr.intensity, sr.anthropic_budget());
     }
     Ok(())
 }

@@ -138,7 +138,7 @@ fn invalid_model_id_fails_lint() {
     write_def(&dir, "roles/bad.yaml", r#"
 id: roles/bad
 kind: role
-default_model: gpt-4-turbo
+default_model: totally-bogus-model
 context: "Bad model."
 tools:
   always_on: []

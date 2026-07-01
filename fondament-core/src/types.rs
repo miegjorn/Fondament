@@ -88,15 +88,59 @@ pub struct ModelSpec {
     pub model: String,
 }
 
+/// Provider-agnostic signal that an agent should engage extended reasoning.
+/// Callers request a tier; dispatch translates to provider-specific params.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ReasoningIntensity { Low, Medium, High }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StructuredReasoning {
+    pub intensity: ReasoningIntensity,
+}
+
+impl StructuredReasoning {
+    /// Derive intensity from number of composed parts (deconstructive path).
+    pub fn from_parts_count(n: usize) -> Self {
+        let intensity = match n {
+            0..=1 => ReasoningIntensity::Low,
+            2..=3 => ReasoningIntensity::Medium,
+            _ => ReasoningIntensity::High,
+        };
+        Self { intensity }
+    }
+
+    /// Convert a raw token budget (from canvas YAML) to the nearest intensity tier.
+    pub fn from_budget(budget: u32) -> Self {
+        let intensity = if budget <= 3_000 {
+            ReasoningIntensity::Low
+        } else if budget <= 6_000 {
+            ReasoningIntensity::Medium
+        } else {
+            ReasoningIntensity::High
+        };
+        Self { intensity }
+    }
+
+    /// Translate to Anthropic thinking_budget_tokens.
+    pub fn anthropic_budget(&self) -> u32 {
+        match self.intensity {
+            ReasoningIntensity::Low    => 3_000,
+            ReasoningIntensity::Medium => 6_000,
+            ReasoningIntensity::High   => 10_000,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResolvedAgent {
     pub system_prompt: String,
     pub tools: Vec<crate::tools::ToolDefinition>,
     pub jit_tools: Vec<crate::tools::ToolDefinition>,
     pub default_model: ModelId,
-    /// Set when the deconstructive modifier is active.
-    /// Callers must pass this to the Anthropic API as thinking.budget_tokens.
-    pub thinking_budget: Option<u32>,
+    /// Set when the deconstructive modifier is active. Dispatch translates
+    /// this to provider-specific reasoning params (Anthropic: budget_tokens;
+    /// Gemini/OpenAI-o: gracefully dropped — they reason natively).
+    pub structured_reasoning: Option<StructuredReasoning>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

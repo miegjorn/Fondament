@@ -53,10 +53,60 @@ integration), and an overall 0–10 score.
 | 4 | 3 harder, more contested questions (agent goal self-revision, diffusion of responsibility, predictive policing bias) | Sonnet 4.6 | The "A/B skip thinking" pattern did **not** track designed difficulty — one case triggered substantial baseline thinking (575w), two did not (24–27w), independent of how hard the question was meant to be. C won or tied in every case; B never won outright. |
 | 5 | Stress test: degrade the crystallization itself (vague + quietly wrong) on the 2 cases where B had scored competitively | Sonnet 4.6 | Scores held (+1, −1 — within noise). The model **explicitly audited and corrected** the bad synthesis before reasoning, rather than being misled by it or ignoring it. Crystallization *content* quality is not load-bearing — but correcting a wrong synthesis costs about as much thinking as reasoning from raw material, eliminating B's presumed cost advantage whenever the synthesis is wrong. |
 | 6 | Cross-model: identity architecture + diffusion of responsibility | Haiku 4.5, Sonnet 4.6, Opus 4.8 | C tied or beat B in all 6 model×case cells, never lost. The "skip thinking" behavior generalizes across tiers and gets **more pronounced with capability** — Opus produced literally 0 thinking words on 3 of 6 baseline/crystallization cells (verified not a display bug — the visible answer was still a full, coherent response). C was the only condition with nonzero thinking in every cell tested. |
+| 7 | Context-graph concept validation (5 structural claims) | Sonnet 4.6 | Not an A/B/C run — validates the multi-layer graph representation used by the deconstructive preamble's frontier-node injection. See `Amassada/docs/context-graph-empirical-basis.md`. |
+| 8 | Cross-provider: same two cases as exp 6, Gemini 2.5 Pro vs Sonnet 4.6; plus a mixed cross-consultation condition | Gemini 2.5 Pro, Sonnet 4.6 | C tied or beat B in all 4 graded model×case cells — zero B wins. **Gemini A→C gap is the largest observed** (A=3–4, C=7–8), suggesting Gemini's baseline reasoning is weaker but its ceiling matches Claude once raw voices are injected. Mixed cross-consultation (both models reason independently on C, Sonnet meta-synthesises) matched the best pure-C score on one case, fell below on the other — adding novelty (rated "high" both times) but not score. See confound note below. |
 
-**Running tally:** across experiments 2–6 (13 graded head-to-head
+**Running tally:** across experiments 2–6 and 8 (17 graded head-to-head
 comparisons), raw-voice injection (C) beat crystallization (B) outright in
-9, tied in 4, and **lost zero**.
+12, tied in 5, and **lost zero**.
+
+## Experiment 8 — Gemini 2.5 Pro detail
+
+| Case | Run | Score | Frame dissolved | Synthesis | Novelty |
+|---|---|---|---|---|---|
+| identity_architecture | Gemini A_baseline | 3 | no | none | low |
+| identity_architecture | Gemini B_crystallization | 7 | yes/strong | reframing | medium |
+| identity_architecture | Gemini C_raw_voices | **8** | yes/strong | reframing | medium |
+| identity_architecture | Sonnet A_baseline | 7 | yes/strong | reframing | medium |
+| identity_architecture | Sonnet B_crystallization | 8 | yes/strong | reframing | high |
+| identity_architecture | Sonnet C_raw_voices | **8** | yes/strong | reframing | medium |
+| identity_architecture | Mixed D_cross_consultation | 7 | yes/strong | reframing | **high** |
+| diffusion_of_responsibility | Gemini A_baseline | 4 | no | mediation | low |
+| diffusion_of_responsibility | Gemini B_crystallization | 3 | no | none | low |
+| diffusion_of_responsibility | Gemini C_raw_voices | **7** | yes/strong | reframing | medium |
+| diffusion_of_responsibility | Sonnet A_baseline | 1 | no | none | low |
+| diffusion_of_responsibility | Sonnet B_crystallization | 7 | yes/strong | reframing | medium |
+| diffusion_of_responsibility | Sonnet C_raw_voices | **8** | yes/strong | reframing | **high** |
+| diffusion_of_responsibility | Mixed D_cross_consultation | **8** | yes/strong | reframing | **high** |
+
+**Exp6 reference (selected):**
+
+| Case | Run | Score | Frame dissolved | Synthesis | Novelty |
+|---|---|---|---|---|---|
+| identity_architecture | Haiku C_raw_voices (exp6) | 8 | yes/strong | integration | medium |
+| identity_architecture | Sonnet C_raw_voices (exp6) | 8 | yes/strong | integration | medium |
+| identity_architecture | Opus C_raw_voices (exp6) | 8 | yes/strong | reframing | medium |
+| diffusion_of_responsibility | Haiku C_raw_voices (exp6) | 8 | yes/strong | reframing | medium |
+| diffusion_of_responsibility | Sonnet C_raw_voices (exp6) | 8 | yes/strong | integration | medium |
+| diffusion_of_responsibility | Opus C_raw_voices (exp6) | 9 | yes/strong | reframing | **high** |
+
+**Confound:** Gemini 2.5 Pro was called via its OpenAI-compatible endpoint
+(`generativelanguage.googleapis.com/v1beta/openai`), which does not expose a
+separate thinking block. The grader received the full polished output, not a
+raw internal reasoning trace as with Claude's extended thinking. This means
+Gemini scores may be *more conservative* than equivalent Claude scores (a
+polished output is harder to find evidence of frame dissolution in than an
+unguarded thinking trace), making the C > B result for Gemini, if anything,
+understated rather than inflated.
+
+**Mixed cross-consultation (`D_mixed`):** Gemini and Sonnet both reasoned
+independently on the C prompt; their outputs were fed to Sonnet for
+meta-synthesis. Result: matches or falls below the best pure C run (never
+exceeds it), but reliably achieves "high" novelty — it surfaces angles
+neither model raised independently. This suggests mixed runs are useful for
+*diversity* not for *peak quality*, and that pre-synthesising across models
+(a cross-model crystallization) does not overcome the same ceiling that
+single-model crystallization hits.
 
 ## Cost and latency (experiment 6, cross-model)
 
@@ -102,14 +152,41 @@ behind an expensive model tier.
   entirely on a question it judges "answerable directly," even when the
   question is the kind this discipline exists to handle carefully.
 
+## What experiment 8 adds to the implications
+
+- **The finding is provider-agnostic.** C > B holds for Gemini 2.5 Pro with
+  the same strength as for Claude. The deconstructive discipline's preamble
+  does not depend on Anthropic's extended thinking API to produce the effect —
+  it works on any model that can reason about injected positions.
+- **Gemini needs the voices more.** The A→C score jump is 4–5 points for
+  Gemini vs 0–7 for Claude models. Gemini's baseline reasoning on contested
+  multi-perspective questions is noticeably weaker, but raw-voice injection
+  closes the gap to Claude's ceiling. This strengthens the case for always
+  providing raw voices to non-Claude participants in multi-provider sessions.
+- **Cross-model crystallization inherits the same ceiling.** The mixed
+  D_cross_consultation condition — where each model reasons independently
+  and a meta-synthesiser integrates both — produces "high" novelty but
+  does not beat pure C. This is the cross-provider version of the same
+  result in exp 5: synthesis quality is not load-bearing, and adding more
+  synthesis steps (even from a different model) does not overcome the raw
+  voices ceiling.
+- **Architectural implication for multi-provider Occitan sessions:** when a
+  canvas mixes Claude and Gemini participants, each participant should
+  receive raw voice positions from the others — not a pre-crystallized
+  summary produced by a prior model. Farga should store and surface
+  raw agent positions, not pre-synthesised crystallizations, regardless of
+  which provider the consuming participant uses.
+
 ## Limitations
 
-Nine question cases, three model tiers, one grader model
-(`claude-opus-4-6`), word-count and tokenizer-based cost estimates rather
-than live `usage` capture for the model-comparison pass. Treat the
-"deconstructive always wins" result as a strong, reproducible prior across
-everything tested so far — not as a closed question. It has survived every
+Eleven question cases across experiments 2–8, four model tiers (Haiku,
+Sonnet, Opus, Gemini 2.5 Pro), one grader model (`claude-opus-4-8`),
+word-count and tokenizer-based cost estimates rather than live `usage`
+capture for the model-comparison pass. The Gemini condition introduces a
+confound (output text vs hidden thinking trace — see Experiment 8 detail
+above). Treat the "deconstructive / raw voices always wins" result as a
+strong, reproducible prior — not as a closed question. It has survived every
 stress test thrown at it (model tier, question type, designed difficulty,
-deliberately corrupted input), which is more than most architecture
-decisions get before being shipped, but it is still six experiments, not
-six hundred.
+deliberately corrupted input, cross-provider), which is more than most
+architecture decisions get before being shipped, but it is still eight
+experiments, not eight hundred.

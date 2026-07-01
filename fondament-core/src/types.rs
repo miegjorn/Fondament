@@ -20,16 +20,57 @@ pub struct ComposedPart {
 pub struct ModelId(pub String);
 
 impl ModelId {
+    /// Parse a model string into a provider + model for future multi-backend use.
+    /// Currently keeps full backward compat for all existing Claude strings.
+    pub fn as_spec(&self) -> (String, String) {
+        let s = &self.0;
+        if s.starts_with("grok") || s.starts_with("xai:") {
+            ("grok".to_string(), s.trim_start_matches("xai:").to_string())
+        } else if s.contains("claude") || s.starts_with("anthropic:") {
+            ("anthropic".to_string(), s.trim_start_matches("anthropic:").to_string())
+        } else {
+            ("unknown".to_string(), s.to_string())
+        }
+    }
+
+    /// For backward compat with existing lint and definitions.
+    /// Accepts all current Claude models + starts allowing grok* models.
     pub fn is_valid(&self) -> bool {
-        matches!(self.0.as_str(),
+        let s = self.0.as_str();
+        matches!(s,
             "claude-haiku-4-5-20251001" | "claude-sonnet-4-6" |
             "claude-opus-4-8" | "claude-fable-5"
-        )
+        ) || s.starts_with("grok") || s.starts_with("xai:")
     }
 }
 
 impl Default for ModelId {
     fn default() -> Self { Self("claude-sonnet-4-6".into()) }
+}
+
+/// Forward scaffolding for multi-provider routing.
+///
+/// Currently routing decisions are made via the raw model string (e.g. "grok-3",
+/// "claude-sonnet-4-6") plus the optional `endpoint` field on participants
+/// (see Amassada's round.rs and dispatch.rs). ModelProvider / ModelSpec are
+/// intentionally unwired for now — they exist so that richer provider-specific
+/// logic (auth, thinking budget handling, native tool calling, etc.) can be
+/// added later without changing the public ModelId shape.
+///
+/// as_spec() on ModelId already does a minimal grok vs anthropic split for
+/// future use.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ModelProvider {
+    #[default]
+    Anthropic,
+    Grok,
+    Other(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ModelSpec {
+    pub provider: ModelProvider,
+    pub model: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

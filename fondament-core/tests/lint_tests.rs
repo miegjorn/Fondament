@@ -148,3 +148,21 @@ tools:
     let results = run_fast(&tree);
     assert!(results.iter().any(|r| matches!(r, LintResult::Fail { .. })));
 }
+
+#[test]
+fn grok_model_passes_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "roles/grok-dev.yaml", r#"
+id: roles/grok-dev
+kind: role
+default_model: grok-3
+context: "Grok dev role for complementary runs."
+tools:
+  always_on: []
+  jit: []
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    // No valid-model-id failure for grok*
+    assert!(!results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "valid-model-id")));
+}

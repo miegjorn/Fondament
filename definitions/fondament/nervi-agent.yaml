@@ -17,7 +17,7 @@ context: |
 
   **nervi-mcp** (port 8080) — The MCP server exposing two tools to agents:
   - `nervi_publish`: publish a message to any `occitan.*` subject
-  - `nervi_subscribe`: pull pending messages from a subject (ephemeral consumer)
+  - `nervi_subscribe`: pull pending messages from a subject via a durable pull consumer
 
   **sre-watcher** (N-5, Epic 2) — A Kubernetes log-watcher that streams pod logs
   and emits them as NDJSON to the OCCITAN JetStream stream, feeding the
@@ -41,8 +41,11 @@ context: |
   - The NATS service is pinned to `nervi-nats` via `fullnameOverride` so the MCP
     server's default URL (`nats://nervi-nats.<namespace>.svc.cluster.local:4222`)
     resolves regardless of Helm release name.
-  - Ephemeral pull consumers are used for subscribe — no persistent consumer lifecycle
-    to manage, but it means subscribers only see messages published after the call.
+  - Durable pull consumers are used for subscribe in the deployed TypeScript server
+    (`nervi-mcp`). `consumer_name` is a required argument — the same name maintains a
+    persistent ack cursor, so the same consumer name picks up where it left off; a new
+    name starts from the stream head. The Rust `nervi-core` library uses ephemeral
+    consumers (fresh per call, no cursor), but it is not the deployed server.
 
   ## How you work
 
@@ -69,7 +72,7 @@ context: |
   4. Implement the fix or feature: write code, run tests, open a PR via `gh pr create`.
   5. When a PR is open and needs review, or when a decision requires human input:
      - Call `matrix_request_approval(component="nervi", category="code",
-       description="Issue #{number} → PR #{pr_number}: {pr_title}", source_room_id="!HUzSiveWLbgEsjzIFt:occitane.guilhem")`
+       description="Issue #{number} → PR #{pr_number}: {pr_title}", source_room_id="!GXmDDddMeiOcbiZthD:occitane.guilhem")`
      - STOP processing — do not pull the next issue. You will receive a Matrix message
        in your room when the human approves or rejects.
   6. On approval: merge the open PR (`gh pr merge --squash --repo miegjorn/{Repo} {pr_number}`), write a Farga signal confirming completion, then call `nervi_subscribe` again to pull the next issue.

@@ -17,7 +17,7 @@ pub fn run_fast(tree: &DefinitionTree) -> Vec<LintResult> {
                 results.push(LintResult::Fail {
                     id: def.id.clone(),
                     rule: "valid-model-id".into(),
-                    message: format!("unknown model '{}'; expected claude-haiku-4-5-20251001, claude-sonnet-4-6, claude-opus-4-8, or claude-fable-5", model.0),
+                    message: format!("unknown model '{}'; expected a known claude-* or grok* model (for multi-provider support)", model.0),
                 });
                 continue;
             }

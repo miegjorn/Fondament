@@ -201,3 +201,20 @@ tools:
     let results = run_fast(&tree);
     assert!(!results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "valid-model-id")));
 }
+
+#[test]
+fn gemini_model_passes_lint() {
+    let dir = TempDir::new().unwrap();
+    write_def(&dir, "roles/gemini-analyst.yaml", r#"
+id: roles/gemini-analyst
+kind: role
+default_model: gemini-2.5-pro
+context: "Gemini-backed analyst role."
+tools:
+  always_on: []
+  jit: []
+"#);
+    let tree = DefinitionTree::load(dir.path()).unwrap();
+    let results = run_fast(&tree);
+    assert!(!results.iter().any(|r| matches!(r, LintResult::Fail { rule, .. } if rule == "valid-model-id")));
+}

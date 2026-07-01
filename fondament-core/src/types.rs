@@ -28,6 +28,8 @@ impl ModelId {
             ("grok".to_string(), s.trim_start_matches("xai:").to_string())
         } else if s.starts_with("gpt-") || s.starts_with("o1") || s.starts_with("o3") || s.starts_with("o4") || s.starts_with("openai:") {
             ("openai".to_string(), s.trim_start_matches("openai:").to_string())
+        } else if s.starts_with("gemini-") || s.starts_with("google:") {
+            ("gemini".to_string(), s.trim_start_matches("google:").to_string())
         } else if s.starts_with("qwen-") || s.starts_with("qwq-") {
             ("qwen".to_string(), s.to_string())
         } else if s.contains("claude") || s.starts_with("anthropic:") {
@@ -48,6 +50,7 @@ impl ModelId {
             "claude-opus-4-8" | "claude-fable-5"
         ) || s.starts_with("grok") || s.starts_with("xai:")
           || s.starts_with("gpt-") || s.starts_with("o1") || s.starts_with("o3") || s.starts_with("o4") || s.starts_with("openai:")
+          || s.starts_with("gemini-") || s.starts_with("google:")
           || s.starts_with("qwen-") || s.starts_with("qwq-")
           || s.contains(':')
     }
@@ -74,6 +77,7 @@ pub enum ModelProvider {
     Anthropic,
     Grok,
     OpenAI,
+    Gemini,
     Qwen,
     Other(String),
 }

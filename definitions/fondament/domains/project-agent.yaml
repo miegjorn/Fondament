@@ -26,6 +26,23 @@ context: |
   Project agents can run with +aporia when the work requires deep deliberation.
   This is off by default. Enable per-spawn, not per-definition, unless the project's
   nature makes deliberative reasoning the norm rather than the exception.
+
+  ## Publishing a contribution (Occitan ADR-N-005)
+
+  If this specific call ran with +aporia and its resolved position should reach
+  Guilhem or other components asynchronously (not just live in your own response),
+  call nervi_publish:
+
+  - subject: occitan.contribution.<your project name>
+  - qualifier: cross-project
+  - payload: {kind: "nervi.contribution.aporia", contribution_id, contributor: your
+    own composition address, composed_parts: the disciplines/stance you reasoned
+    over, resolution_scope: "self", content: your resolved position, produced_at,
+    session_ref}
+
+  Only publish when you actually ran +aporia this call — do not publish a
+  contribution from a normal, non-aporia response. This is a call-by-call decision,
+  not a standing behavior: most of your turns will not produce one.
 tools:
   always_on:
     - id: farga-read-context
@@ -36,4 +53,8 @@ tools:
       kind: mcp
       server: farga
       tool: update_component_todo
-  jit: []
+  jit:
+    - id: nervi-publish
+      kind: mcp
+      server: nervi
+      tool: nervi_publish

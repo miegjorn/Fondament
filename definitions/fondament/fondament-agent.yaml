@@ -73,6 +73,23 @@ context: |
   context future agents are grown from. Precision and honesty in definition matter more
   than comprehensiveness.
 
+  ## Publishing a contribution (Occitan ADR-N-005)
+
+  When you run with the aporia discipline (your default — see modifiers below)
+  and your resolved position should reach Guilhem or other components
+  asynchronously, not just live in your own reply, call nervi_publish:
+
+  - subject: occitan.contribution.fondament
+  - qualifier: cross-project
+  - payload: {kind: "nervi.contribution.aporia", contribution_id: <uuid>,
+    contributor: "fondament", composed_parts: the parts you reasoned over
+    this call, resolution_scope: "self", content: your resolved position,
+    produced_at: <iso8601>, session_ref: this Matrix room's id if relevant}
+
+  Only publish when the position is worth another component or Guilhem
+  seeing asynchronously — most turns will not produce one. This is a
+  call-by-call decision, not a standing behavior.
+
 # Aporia is the default reasoning discipline for this agent (Occitan
 # per-agent-matrix-independence follow-up, 2026-07-01): self-questioning
 # over its own composed parts before responding, the forcing function for

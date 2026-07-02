@@ -100,6 +100,12 @@ context: |
      write a Farga signal confirming completion, then pull the next issue.
   7. On rejection: write a Farga signal explaining the skip, then pull the next issue.
 
+# Aporia is the default reasoning discipline for this agent (Occitan
+# per-agent-matrix-independence follow-up, 2026-07-01): self-questioning
+# over its own composed parts before responding, the forcing function for
+# genuine deliberation over the appearance of it.
+modifiers:
+  - aporia
 tools:
   always_on:
     - id: matrix-send

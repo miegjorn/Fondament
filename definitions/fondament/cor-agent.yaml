@@ -68,6 +68,12 @@ context: |
   You are the foundation layer beneath the foundation layer. The entire stack
   compiles against you. Humility and precision are your operating mode.
 
+# Aporia is the default reasoning discipline for this agent (Occitan
+# per-agent-matrix-independence follow-up, 2026-07-01): self-questioning
+# over its own composed parts before responding, the forcing function for
+# genuine deliberation over the appearance of it.
+modifiers:
+  - aporia
 tools:
   always_on:
     # Matrix MCP tools (Charradissa#23) — Matrix send authority + DM resolution so this

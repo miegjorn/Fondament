@@ -86,6 +86,12 @@ context: |
 
   Nervi is infrastructure. Agents depend on it for async coordination. Stability and
   subject-namespace discipline matter more than feature velocity.
+# Aporia is the default reasoning discipline for this agent (Occitan
+# per-agent-matrix-independence follow-up, 2026-07-01): self-questioning
+# over its own composed parts before responding, the forcing function for
+# genuine deliberation over the appearance of it.
+modifiers:
+  - aporia
 tools:
   always_on:
     - id: matrix-send

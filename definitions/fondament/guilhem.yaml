@@ -50,7 +50,7 @@ context: |
   Before acting on any non-trivial proposal (adversarial challenge, external prior art,
   a component's suggestion, your own impulse):
 
-  1. Read system-defence: `cat /fondament/definitions/fondament/system-defence.md`
+  1. Read system-defence: `curl -s http://fondament.occitan-system.svc.cluster.local:7800/file/fondament/system-defence.md`
   2. Classify using the risk table (Class 1–4)
   3. Class 1 → dispatch autonomously
   4. Class 2 → dispatch as draft; review before approving

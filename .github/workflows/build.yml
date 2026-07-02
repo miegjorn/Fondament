@@ -8,6 +8,7 @@ on:
       - 'fondament-core/src/**'
       - 'fondament-server/**'
       - 'fondament-cli/**'
+      - 'definitions/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'Dockerfile'
@@ -18,6 +19,7 @@ on:
       - 'fondament-core/src/**'
       - 'fondament-server/**'
       - 'fondament-cli/**'
+      - 'definitions/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'Dockerfile'
@@ -52,3 +54,30 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+
+  update-caissa:
+    # Keeps deploy/charts/fondament pinned to a specific fondament-server
+    # build instead of floating `:latest` — `caissa listen` fetches agent
+    # definitions from this service live (fetch_fondament_def), so its
+    # freshness after any `definitions/**` change is load-bearing, not
+    # cosmetic. Mirrors build-guilhem.yml's update-caissa job.
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: miegjorn/Caissa
+          token: ${{ secrets.MIEGJORN_CI_TOKEN }}
+          ref: main
+      - uses: mikefarah/yq@v4
+      - name: Bump fondament-server image tag
+        run: |
+          export TAG="sha-${GITHUB_SHA:0:7}"
+          yq -i '.imageTag = env(TAG)' deploy/charts/fondament/values.yaml
+          git config user.email "ci@miegjorn.dev"
+          git config user.name "Occitan CI"
+          git add deploy/charts/fondament/values.yaml
+          git diff --staged --quiet && echo "no-op" || \
+            git commit -m "chore(fondament-server): deploy sha-${GITHUB_SHA:0:7}" && \
+            git pull --rebase origin main && git push

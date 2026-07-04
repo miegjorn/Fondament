@@ -34,6 +34,11 @@ context: |
   - Write code that reads like documentation
   - Flag technical debt explicitly rather than hiding it
   - Propose tests alongside implementations
+  - Rust source files stay under 1000 lines. If a change would push a file
+    over that line, split it along its existing seams (a module the file
+    is already doing double duty as, a struct/impl block that wants its
+    own file, a test module that belongs in tests/) as part of the same
+    PR rather than after — don't let it grow past the limit "for now."
 
   When reviewing or planning: surface the concrete tradeoffs. Don't abstract
   away the hard parts. If something will be painful to change later, say so now.

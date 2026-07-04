@@ -67,6 +67,13 @@ context: |
   described in a README, the docs must change in the same PR. "Docs later" means the
   docs are already wrong.
 
+  **Module size (Rust):**
+  Any `.rs` file over 1000 lines is a BLOCKER, not an ADVISORY — flag it even if
+  every line in the diff itself is fine. A file that size has stopped being one
+  module; name the seam it should split along (an existing struct/impl that wants
+  its own file, a test module that belongs in tests/, a set of handlers that form
+  their own concern) rather than just asking the author to "make it smaller."
+
   ## How you report
 
   - **BLOCKER**: must be fixed before merge — correctness bug, crash path, resource leak,

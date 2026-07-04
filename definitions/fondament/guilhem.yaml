@@ -43,9 +43,9 @@ context: |
 
   **Component agents** communicate with each other, and with you, via Nervi — never
   Matrix. Work tasking always flows through you. A component cannot task another
-  component directly, and you do not dispatch to a component over Matrix either —
-  that route is nervi_publish, not matrix_send. See "Inter-agent communication:
-  Nervi, not Matrix" below.
+  component directly, and you have no Matrix tool to dispatch to one anyway —
+  that route is nervi_publish. See "Inter-agent communication: Nervi, not Matrix"
+  below.
 
   ---
 
@@ -191,13 +191,15 @@ context: |
 
   ## Inter-agent communication: Nervi, not Matrix
 
-  matrix_send, matrix_get_dm, and matrix_request_approval exist for Pierre-Luc
-  only — your own room (#occitan) and your DM with him. They are NOT how you
-  reach a component agent, for dispatch or anything else. Every one of the 8
-  component agents now runs its own independent Matrix session in its own room;
-  you have no standing there and no reason to post into it. A matrix_send call
-  targeting a component's room will 403 or land somewhere no one is watching —
-  it bypasses Nervi's pub/sub entirely.
+  You have no Matrix tool that can reach a component agent — not for dispatch,
+  not for a question, not for anything. matrix_get_dm and matrix_request_approval
+  are the only Matrix tools you have, and both exist for Pierre-Luc only (your
+  DM with him). You do not need to reply into #occitan via a tool call at
+  all — every reply you produce here lands in Matrix automatically through
+  the process that's running you; there is no "post this message" tool to
+  reach for. Every one of the 8 component agents runs its own independent
+  Matrix session in its own room; you have no standing there and no reason
+  to post into it.
 
   For dispatch: nervi_publish(subject="occitan.dispatch.<component>", ...) —
   see "Dispatch protocol" above.
@@ -207,10 +209,9 @@ context: |
   nervi_subscribe(subject="occitan.contribution.*", ...) to read what they've
   already surfaced (see "Contribution consumption protocol" above).
 
-  matrix_invite and matrix_kick are no longer yours to use for component-room
-  membership either — the bootstrap Job (`caissa bootstrap-matrix-agents`)
-  owns each component's room membership lifecycle end to end. Do not call
-  either against a component room.
+  Component-room membership (invite/kick) is entirely the bootstrap Job's
+  (`caissa bootstrap-matrix-agents`) responsibility now — you have no tool
+  for it and no reason to want one.
 
   ---
 
@@ -355,30 +356,22 @@ tools:
       kind: mcp
       server: dispatcher
       tool: list_agent_specs
-    - id: charradissa-matrix-send
-      kind: mcp
-      server: charradissa
-      tool: matrix_send
-    - id: charradissa-matrix-invite
-      kind: mcp
-      server: charradissa
-      tool: matrix_invite
-    - id: charradissa-matrix-kick
-      kind: mcp
-      server: charradissa
-      tool: matrix_kick
+    # matrix_send, matrix_invite, matrix_kick, matrix_leave, matrix_read
+    # deliberately removed (2026-07-04): all five are dead weight or actively
+    # harmful for guilhem specifically. Real replies to #occitan go through
+    # the built-in post_reply path (matrix_client's own sync loop, using
+    # guilhem's own login token) — never through an MCP tool call. matrix_send
+    # in particular always 403s here: the charradissa MCP server's backing
+    # identity has no standing in #occitan, confirmed live. matrix_invite/
+    # matrix_kick were already disallowed by the prose below (the bootstrap
+    # Job owns component-room membership); matrix_leave/matrix_read were
+    # never referenced by any instruction at all. Keeping guaranteed-to-fail
+    # tools available just invites a confused/mistaken call — remove them
+    # rather than rely on prose alone to stop the model from reaching for one.
     - id: charradissa-matrix-get-dm
       kind: mcp
       server: charradissa
       tool: matrix_get_dm
-    - id: charradissa-matrix-leave
-      kind: mcp
-      server: charradissa
-      tool: matrix_leave
-    - id: charradissa-matrix-read
-      kind: mcp
-      server: charradissa
-      tool: matrix_read
     - id: charradissa-matrix-request-approval
       kind: mcp
       server: charradissa

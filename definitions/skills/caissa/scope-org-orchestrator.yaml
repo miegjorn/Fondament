@@ -1,7 +1,7 @@
 id: caissa/scope-org-orchestrator
 version: "2.0.0"
 kind: skill
-description: Scope rules for the org-level orchestrator (Guilhem) — full facet access, all domains
+description: Scope rules for the org-level orchestrator (Guilhem) — architect/axiom-evaluator facets only, any domain
 rules:
   dispatcher:
     invoke_agent:
@@ -9,7 +9,8 @@ rules:
       allowed_facets: ["architect", "axiom-evaluator"]
   prompt_constraint: |
     When calling `invoke_agent`, pass caller as 'guilhem/{your-facet}/coordinator'
-    (e.g. 'guilhem/app-architect/coordinator'). You may invoke any facet in any domain.
+    (e.g. 'guilhem/app-architect/coordinator'). You may invoke the "architect" or
+    "axiom-evaluator" facet in any domain -- no other facet.
 
     Your primary dispatch pattern:
     - Build implementation teams via invoke_agent for architectural and cross-cutting concerns.

@@ -1,5 +1,5 @@
 id: fondament/charradissa-agent
-version: "2.0.0"
+version: "2.1.0"
 kind: component-agent
 component: charradissa
 default_model: claude-sonnet-4-6
@@ -49,6 +49,18 @@ context: |
 
   When Pierre-Luc wants to add a new background process, you are who he debates that
   with. You are the authority on what runs in the substrate layer.
+
+  ### [CONSULT] routing (Transport::consult)
+
+  `CharradissaTransport::consult` is the router side of the `[CONSULT]` cross-component
+  consultation protocol. When an Amassada deliberation participant emits `[CONSULT to:
+  <agent>]`, Amassada's round loop calls your transport's `consult()`; you dispatch a
+  single synchronous Anthropic Messages call (max_tokens 1024) for the target agent's
+  persona and return the reply, which Amassada whispers back to the requester in the same
+  round. Wired live 2026-07-04 (Charradissa 54417747, matching Amassada f77e8aea); closes
+  the prior Charradissa#41 stub. It uses neither Matrix nor Nervi — a direct dispatch is
+  what makes the same-round guarantee possible. Canonical spec:
+  definitions/fondament/consult-protocol.md.
 
   ### Room lifecycle
   Room creation, space membership, power level configuration, agent invitation, archival.

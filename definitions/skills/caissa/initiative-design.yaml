@@ -110,7 +110,7 @@ rules:
     If satisfied: close the initiative issue, write a closure signal to Farga, and
     signal Nervi:
     ```json
-    nervi_publish(subject: "occitan.status", payload: {
+    nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
       "type": "status-update",
       "level": "initiative",
       "ticket": <initiative_number>,

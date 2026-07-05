@@ -41,7 +41,7 @@ rules:
     ```
 
     ```json
-    nervi_publish(subject: "occitan.status", payload: {
+    nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
       "type": "status-update",
       "level": "story",
       "component": "<component>",
@@ -124,7 +124,7 @@ rules:
     Delegation (your prerogative): if the change is in an area you are less
     familiar with, or if you want an independent eye:
     ```json
-    nervi_publish(subject: "occitan.dispatch.reviewer", payload: {
+    nervi_publish(subject: "occitan.dispatch.reviewer", qualifier: "info", payload: {
       "type": "review-request",
       "pr": <pr_number>,
       "story": <story_number>,
@@ -153,7 +153,7 @@ rules:
 
     Signal Nervi:
     ```json
-    nervi_publish(subject: "occitan.status", payload: {
+    nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
       "type": "status-update",
       "level": "story",
       "component": "<component>",
@@ -186,7 +186,7 @@ rules:
 
     Signal Nervi:
     ```json
-    nervi_publish(subject: "occitan.status", payload: {
+    nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
       "type": "status-update",
       "level": "epic",
       "component": "<component>",

@@ -35,7 +35,7 @@ rules:
     - Default severity floor: High (dream findings that reach bug status are
       usually meaningful architectural issues)
 
-    **Meditation session finding** (meditation-moderator)
+    **Meditation session finding** (the meditate periodic skill)
     - File a bug if: the finding identifies a concrete deviation from development
       practice, philosophy, or a quality standard the stack has committed to.
     - File a Farga signal only if: the finding is a reflection or open question.

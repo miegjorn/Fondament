@@ -9,6 +9,8 @@ rules:
   perceive:
     accept_dispatch_from:
       - guilhem
+      - sre-watchdog
+      - guilhem-sre
       # component agents accept dispatch orders from guilhem (org routing,
       # Level 3 of occitan/amassada) and from the SRE watchdog's escalation
       # path -- not from arbitrary other component agents directly, matching

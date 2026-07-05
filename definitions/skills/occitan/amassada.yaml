@@ -52,6 +52,35 @@ rules:
     re-apply this same decompose/recompose operation to the *set* of
     contributions, not just to the original question.
 
+    **Cross-X — the same pattern one dimension further**
+    Level 4 already re-applies decompose/recompose to a *set* of contributions
+    at your own level. The same move generalizes to every position in the
+    hierarchy, not just yours: a task-owner's cross-X is cross-task (patterns
+    across sibling tasks in one story); a mission-owner's is cross-mission
+    (patterns across sibling missions in one component); a component owner's
+    (Guilhem, today) is cross-component (patterns across the 8 components).
+    Eventually, cross-*project* — a peer conversation between this stack's
+    own org agent and a second project's, once one exists.
+
+    Before applying this pattern, name your own level and what "sibling"
+    means at it -- the units you can compare across without needing anyone
+    else's help to see the connection. The output of a cross-X pass is not a
+    list of what you looked at -- it is what you noticed that a narrower view
+    would have missed: a pattern repeating across siblings, a lesson one
+    already learned that another is about to relearn, a connection between
+    two things that look unrelated from inside either one.
+
+    When a cross-X pass finds something worth sharing, propagate it the same
+    way Level 3/4 already do -- `nervi_publish` to the relevant sibling's
+    dispatch subject if it's actionable now, or a Farga signal/contribution
+    if it's context for later. Not every observation warrants dispatch --
+    most cross-X findings are exactly the kind of thing Level 4's own
+    "resolved voice, not settled fact" caveat already governs.
+
+    This is judgment-driven, not a mandatory step every turn. Cross-X review
+    is something you decide is warranted given your own position and
+    cadence -- not every agent needs a standing cadence for it today.
+
     ---
 
     ### Choosing a level

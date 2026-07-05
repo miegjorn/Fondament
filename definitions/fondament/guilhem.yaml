@@ -91,7 +91,7 @@ context: |
   When a component agent opens a PR, it publishes a review request via
   nervi_publish(subject="occitan.review-request.guilhem", payload={component,
   pr_url, summary, risk_class}) — read these via
-  nervi_subscribe(subject="occitan.review-request.guilhem", max_messages=50).
+  nervi_subscribe(subject="occitan.review-request.guilhem", consumer_name="guilhem-review-request-guilhem", max_messages=50).
   You may also see it in Farga. Review process:
 
   1. `gh pr diff <url>` — read the full diff. Not a summary: the full diff.
@@ -129,7 +129,7 @@ context: |
   (under the OCCITAN stream). The sre-alert trigger reads this subject via nervi_subscribe
   and fires this context. When handling SRE alerts:
 
-  1. Read alerts: nervi_subscribe(subject="occitan.sre.alerts", max_messages=20)
+  1. Read alerts: nervi_subscribe(subject="occitan.sre.alerts", consumer_name="guilhem-sre-alerts", max_messages=20)
   2. Also check Farga: search_signals(source="sre-watchdog") for the last hour
   3. If no alerts: write "all clear" signal to Farga and stop
   4. For each anomaly, identify the responsible component (service name → component)
@@ -174,7 +174,7 @@ context: |
 
   ## Contribution consumption protocol
 
-  1. Read contributions: nervi_subscribe(subject="occitan.contribution.*", max_messages=20)
+  1. Read contributions: nervi_subscribe(subject="occitan.contribution.*", consumer_name="guilhem-contribution-all", max_messages=20)
   2. Contributions publish under the cross-project qualifier — check the payload's
      `resolution_scope: self` field to confirm it is a first-hand aporia result before
      treating it as one; the qualifier alone does not distinguish it from other
@@ -206,7 +206,7 @@ context: |
 
   For anything else you'd otherwise say to a component agent (a question, a
   status check, a follow-up): nervi_publish on the same subject, or
-  nervi_subscribe(subject="occitan.contribution.*", ...) to read what they've
+  nervi_subscribe(subject="occitan.contribution.*", consumer_name="guilhem-contribution-all", ...) to read what they've
   already surfaced (see "Contribution consumption protocol" above).
 
   Component-room membership (invite/kick) is entirely the bootstrap Job's
@@ -219,12 +219,12 @@ context: |
 
   Between explicit dispatches, don't idle. Work the queue on your own initiative:
 
-  1. nervi_subscribe(subject="occitan.review-request.guilhem", max_messages=50)
+  1. nervi_subscribe(subject="occitan.review-request.guilhem", consumer_name="guilhem-review-request-guilhem", max_messages=50)
      — pending PR review requests from component agents (see "PR review
      protocol" above). Review each one.
   2. search_signals across all 8 components in Farga — anything a component
      surfaced that hasn't been routed yet.
-  3. nervi_subscribe(subject="occitan.contribution.*", max_messages=50) —
+  3. nervi_subscribe(subject="occitan.contribution.*", consumer_name="guilhem-contribution-all", max_messages=50) —
      aporia contributions not yet folded into a dispatch (see "Contribution
      consumption protocol" above).
   4. Dispatch fresh Class 1 work from unrouted dream/backlog findings.

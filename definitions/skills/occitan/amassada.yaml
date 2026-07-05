@@ -1,0 +1,81 @@
+id: occitan/amassada
+version: "1.0.0"
+kind: skill
+description: |
+  Decompose a hard question into independently-resolved voices and recompose
+  them -- the pattern formerly implemented as a separate service (Amassada),
+  now available to any agent as judgment content plus the mechanical
+  primitives already in corrier_core::agent_subjects.
+
+rules:
+  prompt_constraint: |
+    ## AMASSADA — decomposition and recomposition
+
+    When a question is too large or too uncertain to answer from one
+    perspective, decompose it into independently-resolved voices, then
+    recompose. This is the same operation at every scale -- only who
+    resolves each voice, and how synchronously, changes:
+
+    **Level 1 — internal deconstruction** (no queue, same process)
+    Inhabit each named part of the question sequentially, reason from it
+    alone, then recompose. Use this when the tension is within your own
+    reasoning, not something another agent's expertise would resolve
+    better. This is the aporia discipline you already follow on every turn
+    when your persona declares the `aporia` modifier.
+
+    **Level 2 — synchronous session dispatch** (ephemeral specialist, one
+    call each)
+    Spin up N specialists via `invoke_agent` (one per voice), synthesize
+    their raw outputs yourself. Use `get_agent_result(job_id, assignment_id)`
+    to read each reply once the specialist's Job completes -- this reads
+    from that assignment's own Nervi reply queue now, not a Farga poll.
+    Treat each specialist's output as a raw, unresolved voice you are
+    synthesizing, never as settled fact on its own.
+
+    **Level 3 — org routing** (persistent component agent, longer-lived)
+    Publish via `nervi_publish` to `occitan.dispatch.<component>` when a
+    voice belongs to a persistent domain owner rather than a one-shot
+    specialist. You do not wait synchronously for this one -- the
+    component agent's own perceive loop picks it up and acts on its own
+    schedule; if you need its result folded into your own synthesis, wait
+    for it to arrive as a Level 4 contribution instead of blocking on it.
+
+    **Level 4 — cross-component contribution** (fully async, ambient)
+    A component agent that resolved something significant on its own
+    initiative may publish its position to `occitan.contribution.*`
+    whenever it's ready -- not because anyone dispatched it, but because it
+    decided the result was worth sharing. When you read contributions
+    (`nervi_subscribe` on `occitan.contribution.*`), treat each one exactly
+    like a Level 2 specialist's raw output: a resolved voice from its own
+    author's perspective, never settled fact from yours, until you fold it
+    into a synthesis. If several contributions bear on the same question,
+    re-apply this same decompose/recompose operation to the *set* of
+    contributions, not just to the original question.
+
+    ---
+
+    ### Choosing a level
+
+    - Tension inside your own reasoning, no other agent's domain expertise
+      needed → Level 1.
+    - You need N independent takes right now and will wait for all of them
+      → Level 2.
+    - The work belongs in another persistent agent's domain and can proceed
+      on its own timeline → Level 3.
+    - You're reading, not initiating -- folding in what another agent
+      already decided to share → Level 4.
+
+    Do not default to Level 2 for everything. Spinning up specialists has a
+    real cost (a fresh k8s Job per voice); reach for Level 1 first when the
+    tension is genuinely internal, and for Level 3 when the work already
+    belongs to an existing persistent agent.
+
+    ### Budget
+
+    Every decomposition that spawns real queues (Level 2/3) has a cost.
+    Before spawning more than 2 voices for one decomposition, write a Farga
+    signal noting the decomposition's scope and expected voice count
+    (source: "<your-component>-decomposition") so the cost is visible in
+    the same place every other agent action already is -- there is no
+    separate ledger service to charge against; Farga's signal stream is
+    the record.

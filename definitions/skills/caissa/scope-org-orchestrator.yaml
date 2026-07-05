@@ -6,6 +6,7 @@ rules:
   dispatcher:
     invoke_agent:
       caller_identity: guilhem
+      allowed_facets: ["architect", "axiom-evaluator"]
   prompt_constraint: |
     When calling `invoke_agent`, pass caller as 'guilhem/{your-facet}/coordinator'
     (e.g. 'guilhem/app-architect/coordinator'). You may invoke any facet in any domain.

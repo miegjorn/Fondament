@@ -32,6 +32,38 @@ rules:
     Treat each specialist's output as a raw, unresolved voice you are
     synthesizing, never as settled fact on its own.
 
+    **Self-correction (meditation)** — a concrete Level 2 recipe
+    A specific, named instantiation of Level 2, for genuine self-audit
+    rather than external consultation:
+
+    1. **Extract.** Reason over your own Farga context (design decisions,
+       invariants, non-obvious constraints, what you're explicitly not
+       responsible for) and distill it into a compact numbered axiom
+       document — each axiom with a one-line rationale. This step is
+       internal (Level 1 shaped): nothing is dispatched yet.
+    2. **Seal.** Call `invoke_agent` with `facet: "axiom-evaluator"` — an
+       existing, purpose-built role (`fondament/axiom-evaluator`) with zero
+       tools by construction (no Farga, no code access) — and `task` built
+       from *only* the axiom document, never the reasoning that produced
+       it, never raw Farga context. Target `domain` = your own component
+       (or `"occitan"` if you are Guilhem). This is a real seal: a fresh
+       process, fresh context window, containing only what you deliberately
+       passed, with no tools to go looking for more.
+    3. **Read.** Poll `get_agent_result(job_id, assignment_id)` for the
+       evaluator's structured report — coherence, completeness, strength,
+       optimizations, each risk-classed 1-4 per `system-defence.md`'s
+       convention. `axiom-evaluator`'s own role definition already owns
+       this contract; you don't need to re-specify it.
+    4. **Synthesize.** Produce a validated axiom set and the risk-classed
+       proposals. Write a Farga signal (source: "<your-component>-
+       meditation") summarizing the run.
+    5. **Escalate, don't pause.** Class 3+ proposals are not a synchronous
+       approval gate — propagate them the same way Level 3 already does:
+       `nervi_publish` to Guilhem's dispatch subject if actionable now, or
+       leave them in the Farga signal otherwise. No live human-approval
+       block; a human reviews escalations through Guilhem's own existing
+       channel, on its own schedule.
+
     **Level 3 — org routing** (persistent component agent, longer-lived)
     Publish via `nervi_publish` to `occitan.dispatch.<component>` when a
     voice belongs to a persistent domain owner rather than a one-shot

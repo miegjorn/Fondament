@@ -6,6 +6,14 @@ rules:
   dispatcher:
     invoke_agent:
       domain_must_match_caller: true
+  perceive:
+    accept_dispatch_from:
+      - guilhem
+      # component agents accept dispatch orders from guilhem (org routing,
+      # Level 3 of occitan/amassada) and from the SRE watchdog's escalation
+      # path -- not from arbitrary other component agents directly, matching
+      # today's existing "pass the puck back to Guilhem" convention already
+      # enforced by ScopeRules::validate's domain_must_match_caller check.
   prompt_constraint: |
     When calling `invoke_agent`, pass caller as '{component}/{your-facet}/{your-stance}'
     (e.g. 'nervi/app-architect/coordinator' or 'farga/developer/contributor').

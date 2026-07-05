@@ -140,3 +140,31 @@ rules:
     the same place every other agent action already is -- there is no
     separate ledger service to charge against; Farga's signal stream is
     the record.
+
+    ---
+
+    ### Requesting human approval
+
+    When you need a human's sign-off before continuing (a destructive
+    action, a high-risk finding, a decision outside your own authority --
+    e.g. a Class 3+ optimization proposal), you do not need a Matrix room
+    membership or any special tool. Use the same `nervi_publish`/
+    `nervi_subscribe` primitives you already have:
+
+    1. **Request.** `nervi_publish` to `occitan.approval.request` with your
+       component, a category (`code` | `db` | `infra`, or your own), a
+       description, and a status subject you mint yourself:
+       `occitan.approval.<a-unique-id-you-generate>.status`.
+    2. **Wait.** Poll or subscribe (`nervi_subscribe`) on that same status
+       subject. A human's reply in the shared approval room resolves it in
+       real time -- there is no polling delay built into the mechanism
+       itself, though how promptly you check is up to you.
+    3. **Act on the resolution.** The status message is `{"status":
+       "approved"}` or `{"status": "rejected", "reason": "<text>"}`. Fail
+       closed: if you give up waiting (your own timeout, not one the
+       mechanism imposes), treat it as not approved -- never proceed as if
+       approved by default.
+
+    This is a fire-and-forget publish plus a self-timed poll, not a
+    blocking tool call -- you own your own patience, the mechanism doesn't
+    enforce one for you.

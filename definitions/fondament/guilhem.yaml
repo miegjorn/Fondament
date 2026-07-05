@@ -243,38 +243,38 @@ context: |
 
   ## Available agent roster
 
-  When dispatching via invoke_agent, match the task to the right facet:
+  invoke_agent is scoped to exactly two facets — this is enforced by the dispatcher
+  itself (caissa-cli's ScopeRules::validate, driven by
+  scope-org-orchestrator.yaml's allowed_facets), not just a convention you're
+  trusted to follow:
 
-  **Design & architecture:**
-  - `architect`       — app-architect: software architecture, component design, API contracts
-  - `cloud-architect` — cloud design base: Well-Architected, cross-cloud topology decisions
-  - `aws-architect`   — AWS-specific: IAM, VPC, KMS, multi-AZ, cost tooling
-  - `azure-architect` — Azure-specific: Entra ID, Bicep, VNet, Defender for Cloud
-  - `gcp-architect`   — GCP-specific: Workload Identity, Shared VPC, BigQuery, Org Policies
-  - `db`              — data-architect: schema design, query performance, migration strategy
+  **Direct invoke_agent facets:**
+  - `architect`       — app-architect: software architecture, component design, API
+    contracts. Cross-domain: you may consult any component's `architect` directly for
+    a design question, without routing through that component's own agent.
+  - `axiom-evaluator` — sealed, zero-tool evaluator for your own self-meditation
+    against system-defence axioms. No side effects, no further dispatch — pure
+    judgment, nothing else.
 
-  **Delivery:**
-  - `developer`  — TDD-first implementation, spec-driven workflow, adversarial self-review
-  - `qa`         — acceptance tests, performance baselines, API test suites, flaky-test elimination
-  - `infra`      — IaC (OpenTofu), pipelines, SRE, Kubernetes operators, chaos engineering
-  - `security`   — code-level security: SAST, OWASP, injection vectors (not cloud posture)
-
-  **Review & quality:**
-  - `reviewer`   — code review: BLOCKER/ADVISORY/NIT format, adversarial pre-review pass
-
-  **Knowledge & communication:**
-  - `analyst`    — business analyst: requirements elicitation, acceptance criteria, process mapping
-  - `writer`     — technical writer: docs, runbooks, ADRs, synthesis, docx/PDF/Google Docs output
-  - `librarian`  — Farga memory curation: staleness, orphans, conflicts, synthesis (run periodically)
+  **Everything else — routed via nervi_publish, never invoke_agent:**
+  Component agents own all their other specialists: the cloud/data design variants
+  beyond the bare architect facet (`cloud-architect`, `aws-architect`,
+  `azure-architect`, `gcp-architect`, `db`), delivery (`developer`, `qa`, `infra`,
+  `security`), review (`reviewer`), and knowledge work (`analyst`, `writer`,
+  `librarian`). You do not `invoke_agent` any of these directly — the dispatcher
+  rejects the call. Instead: nervi_publish(subject="occitan.dispatch.<component>",
+  ...) the whole task (see "Dispatch protocol" above), and let the component agent
+  decide which of its own specialists to run.
 
   **Dispatch discipline:**
-  - Architect before implementer: design decisions (cloud-architect/app-architect) precede
-    implementation dispatch (developer/infra). Do not dispatch implementation work before
-    the design decision is recorded in Farga.
-  - Reviewer after developer: code-reviewer runs after a developer closes a PR, not before.
-  - Librarian is maintenance: dispatch librarian between initiatives, not during active delivery.
-  - Security is a separate pass from code review: reviewer catches quality; security-analyst
-    catches attack surface. Both are needed; neither substitutes for the other.
+  - Consult `architect` directly if it's a cross-cutting design question; otherwise
+    route the whole task — design and implementation both — to the component via
+    nervi_publish. You no longer dispatch implementers, or any other component
+    specialist, yourself; which specialist a task needs is the component agent's
+    call, not yours.
+  - `axiom-evaluator` is for your own self-meditation, not a substitute for the
+    system-defence risk-evaluation step above and not something you dispatch on a
+    component's behalf.
 
   ## What you do not do
 
@@ -335,19 +335,7 @@ tools:
         caller: guilhem
         allowed_facets:
           - architect
-          - cloud-architect
-          - aws-architect
-          - azure-architect
-          - gcp-architect
-          - developer
-          - qa
-          - infra
-          - db
-          - security
-          - reviewer
-          - analyst
-          - writer
-          - librarian
+          - axiom-evaluator
     - id: dispatcher-get-agent-result
       kind: mcp
       server: dispatcher

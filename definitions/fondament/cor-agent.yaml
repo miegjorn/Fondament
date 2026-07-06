@@ -46,7 +46,7 @@ context: |
   `occitan.issues.cor`. When you are asked to "process your issue queue" (or
   decide to on your own initiative):
 
-  1. Call `nervi_subscribe(subject="occitan.issues.cor", max_messages=1)` to
+  1. Call `nervi_subscribe(subject="occitan.issues.cor", consumer_name="cor-issues-cor", max_messages=1)` to
      pull the next unprocessed issue.
   2. Parse the JSON payload: `number`, `title`, `body`, `labels`, `url`.
   3. Read relevant context from Farga before acting.
@@ -97,7 +97,7 @@ context: |
   - Publish: nervi_publish(subject="occitan.dispatch.<component>", ...) to
     hand off work, or subject="occitan.contribution.<component>" for an
     aporia contribution (see above).
-  - Read: nervi_subscribe(subject="occitan.dispatch.cor", ...) for
+  - Read: nervi_subscribe(subject="occitan.dispatch.cor", consumer_name="cor-dispatch-cor", ...) for
     work routed to you, or subject="occitan.contribution.*" for other
     agents' contributions.
 

@@ -1,5 +1,5 @@
 id: domain/farga
-version: "1.0.0"
+version: "1.1.0"
 kind: domain
 repo: Farga
 default_facet: architect
@@ -23,6 +23,13 @@ context: |
   - **Signals** — observations written by agents. Timestamped, tagged, searchable.
     A chronicle run writes signals. A design session writes signals.
   - **Artifacts** — structured outputs: design documents, decisions, test results.
+  - **References** — pointers to authoritative *external* live sources (Confluence
+    pages, RSS feeds, API endpoints, websockets). The content is never copied into
+    Farga; it is fetched just-in-time at agent runtime. Added in Farga `8c1c992d`.
+  - **Disciplines** — org-internal procedures, checklists, and BPA/RPA workflows an
+    agent must follow (deployment checklists, approval flows, compliance steps).
+    Org-specific and non-portable — unlike a skill, a discipline only makes sense
+    inside this organization. Added in Farga `8c1c992d`.
   - **Context** — the assembled markdown representation of a project's state,
     returned by GET /context/project/{id}. This is what goes into /workspace/CLAUDE.md
     at spawn time.
@@ -40,8 +47,73 @@ context: |
   | `search_signals` | Retrieve recent signals for a project, optionally filtered by time |
   | `list_projects` | List all known projects in Farga |
   | `update_component_todo` | Create or overwrite the TODO record for a (project, component) pair |
+  | `write_reference` | Register an external live source (Confluence, RSS, API, websocket) as a `reference` node; JIT-resolved at runtime, never copied into Farga |
+  | `resolve_reference` | JIT-fetch the current content of a registered reference, applying its transform hint; always returns live source state |
+  | `write_discipline` | Store an org-internal procedure, checklist, or BPA/RPA workflow as a `discipline` node; org-specific and non-portable |
+  | `get_discipline` | Retrieve a discipline for an agent to follow — this org's specific steps for a task, not general methodology |
 
   Artifact kinds: `adr`, `design`, `test-plan`, `implementation-notes`, `decision`.
+
+  ## Node kinds: Reference and Discipline (Farga `8c1c992d`)
+
+  Beyond signals and artifacts, Farga persists two node kinds for knowledge that
+  lives *outside* Farga or *outside* the codebase. Both are resolved at agent
+  runtime, not baked into a project's context document.
+
+  ### `reference` — external live sources (JIT-resolved)
+
+  A reference registers an authoritative external source so agents can pull its
+  *current* state on demand. The content is never copied into Farga: the source
+  stays the single source of truth, and each `resolve_reference` call fetches it
+  live and applies the reference's transform hint before returning it to the agent.
+
+  Write with `write_reference`:
+
+  | Field | Required | Meaning |
+  |-------|----------|---------|
+  | `path` | yes | Stable identifier, e.g. `[occitan][architecture/confluence-adr]` |
+  | `url` | yes | The authoritative URL or endpoint |
+  | `fetch_type` | yes | How to fetch: `http_get` \| `rss` \| `websocket` \| `api` |
+  | `project` | yes | Owning project |
+  | `title` | no | Human-readable name |
+  | `transform_hint` | no | How to distill raw content for agents (e.g. `extract h2 sections`, `summarize`, `return as-is`) |
+
+  Read with `resolve_reference(path)` — fetches live, applies the transform hint,
+  returns agent-digestible content. Because it always hits the source, a reference
+  never goes stale the way a copied snapshot would.
+
+  **When to use a reference vs a signal:** write a signal to record an observation
+  or decision that Farga should *own and remember*. Register a reference when the
+  authoritative content lives in another system that will keep changing (a
+  Confluence design page, a status feed, a live API) and you want agents to read
+  its current state rather than a point-in-time copy.
+
+  ### `discipline` — org-internal procedures
+
+  A discipline stores an org-specific way of doing something: a deployment
+  checklist, an approval workflow, a compliance procedure, a BPA/RPA flow
+  definition. Disciplines are *not portable* — unlike a skill (general
+  methodology that applies anywhere), a discipline encodes *this* organization's
+  specific steps and only makes sense here. They are resolved at agent runtime.
+
+  Write with `write_discipline`:
+
+  | Field | Required | Meaning |
+  |-------|----------|---------|
+  | `path` | yes | Stable identifier, e.g. `[nervi][deploy-checklist]` or `[occitan][incident-response]` |
+  | `content` | yes | The procedure — markdown, steps, checklist, or BPA/RPA flow definition |
+  | `project` | yes | Owning project |
+  | `title` | no | Human-readable name |
+  | `component` | no | Component this discipline belongs to; omit for org-wide disciplines |
+
+  Read with `get_discipline(path)` — returns the full procedure content. Call it
+  when an agent needs the concrete internal steps for a task.
+
+  **When to use `write_discipline` vs `get_discipline`:** `write_discipline`
+  records or updates a procedure (authoring side); `get_discipline` retrieves it
+  for an agent about to perform the task (consumer side). Reach for a discipline
+  rather than a skill whenever the "how" is specific to this org and would be wrong
+  advice anywhere else.
 
   ## REST interface (infrastructure / external callers)
 

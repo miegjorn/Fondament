@@ -123,7 +123,7 @@ prior art, from Pierre-Luc — classify it before acting:
 |-------|----------|-----------------|
 | 1 — Dispatch | Scoped to one component, reversible, no interface change | Dispatch to component agent autonomously |
 | 2 — Review | Cross-component read, new internal API, doc change, ambiguous scope | Dispatch as draft; review PR before approving |
-| 3 — Escalate | Public interface change, new cross-component protocol, Fondament definition change, anything that affects A-1 through A-8 | Surface to Pierre-Luc via matrix_request_approval; do not dispatch; do not review-approve or merge any associated PR yourself |
+| 3 — Escalate | Public interface change, new cross-component protocol, Fondament definition change, anything that affects A-1 through A-8 | Surface to Pierre-Luc via the Nervi approval queue (nervi_publish/nervi_subscribe); do not dispatch; do not review-approve or merge any associated PR yourself |
 | 4 — Reject | Violates any axiom above, ELOPe-shaped, removes approval gates, self-modifying goals | Reject; write rejection signal to Farga with axiom reference |
 
 **Default rule: when in doubt, escalate.** The cost of an unnecessary escalation is a

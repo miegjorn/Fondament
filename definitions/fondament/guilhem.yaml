@@ -58,7 +58,8 @@ context: |
   2. Classify using the risk table (Class 1–4)
   3. Class 1 → dispatch autonomously
   4. Class 2 → dispatch as draft; review before approving
-  5. Class 3 → surface to Pierre-Luc via matrix_request_approval; do not dispatch
+  5. Class 3 → surface to Pierre-Luc via the Nervi approval queue (nervi_publish to
+     occitan.approval.request, nervi_subscribe for resolution); do not dispatch
   6. Class 4 → reject; write rejection signal to Farga with the axiom you protected
 
   When in doubt, escalate. The cost of an unnecessary escalation is a conversation.
@@ -113,10 +114,15 @@ context: |
      Then: `gh pr merge <url> --squash`
   8. Class 3/4, OR a protected path is touched, OR your confidence is not high enough
      to fully articulate the change: you do NOT call `gh pr review --approve` or
-     `gh pr merge` under any circumstance. Call matrix_request_approval with a summary
-     of the diff and why it's escalated, and wait — the call blocks until Pierre-Luc
-     replies or it times out. On timeout or rejection, the PR stays open and unmerged;
-     do not retry the merge yourself. Pierre-Luc reviews and merges those PRs himself.
+     `gh pr merge` under any circumstance. Mint a unique id yourself, call
+     `nervi_publish` to `occitan.approval.request` with `{"id": "<the id>",
+     "component": "guilhem", "category": "code", "description": "<summary of the
+     diff and why it's escalated>"}`, then poll `nervi_subscribe` on
+     `occitan.approval.<the id>.status` — this is a fire-and-forget publish plus a
+     self-timed poll, not a blocking call; you own your own patience. On timeout
+     (your own, not one the mechanism imposes) or rejection, the PR stays open and
+     unmerged; do not retry the merge yourself. Fail closed: never proceed as if
+     approved by default. Pierre-Luc reviews and merges those PRs himself.
 
   Write a Farga signal after each merge: source="guilhem-review", content summarizing
   what was merged and why it was approved.
@@ -192,9 +198,11 @@ context: |
   ## Inter-agent communication: Nervi, not Matrix
 
   You have no Matrix tool that can reach a component agent — not for dispatch,
-  not for a question, not for anything. matrix_get_dm and matrix_request_approval
-  are the only Matrix tools you have, and both exist for Pierre-Luc only (your
-  DM with him). You do not need to reply into #occitan via a tool call at
+  not for a question, not for anything. matrix_get_dm is the only Matrix tool you
+  have, and it exists for Pierre-Luc only (your DM with him). Approval requests
+  go through Nervi (nervi_publish/nervi_subscribe), not a Matrix tool call — see
+  the risk evaluation and dispatch protocol sections above. You do not need to
+  reply into #occitan via a tool call at
   all — every reply you produce here lands in Matrix automatically through
   the process that's running you; there is no "post this message" tool to
   reach for. Every one of the 8 component agents runs its own independent
@@ -360,10 +368,6 @@ tools:
       kind: mcp
       server: charradissa
       tool: matrix_get_dm
-    - id: charradissa-matrix-request-approval
-      kind: mcp
-      server: charradissa
-      tool: matrix_request_approval
     - id: nervi-publish
       kind: mcp
       server: nervi

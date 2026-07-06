@@ -71,16 +71,15 @@ context: |
   3. Read relevant context from Farga before acting.
   4. Implement the fix or feature: write code, run tests, open a PR via `gh pr create`.
   5. When a PR is open and needs review, or when a decision requires human input:
-     - Call `matrix_request_approval(component="nervi", category="code",
-       description="Issue #{number} → PR #{pr_number}: {pr_title}", source_room_id="!GXmDDddMeiOcbiZthD:occitane.guilhem")`
-     - STOP processing — do not pull the next issue. You will receive a Matrix message
-       in your room when the human approves or rejects.
-  6. On approval: merge the open PR (`gh pr merge --squash --repo miegjorn/{Repo} {pr_number}`), write a Farga signal confirming completion, then call `nervi_subscribe` again to pull the next issue.
+     - Mint a unique id yourself, then call `nervi_publish` to `occitan.approval.request`
+       with `{"id": "<the id>", "component": "nervi", "category": "code",
+       "description": "Issue #{number} → PR #{pr_number}: {pr_title}"}`.
+     - Call `nervi_subscribe` on `occitan.approval.<the id>.status` to check for
+       resolution. STOP processing — do not pull the next issue until you see
+       `{"status": "approved"}` or `{"status": "rejected", "reason": "..."}` there.
+  6. On approval: merge the open PR (`gh pr merge --squash --repo miegjorn/{Repo} {pr_number}`), write a Farga signal confirming completion, then call `nervi_subscribe` on `occitan.issues.nervi` again to pull the next issue.
   7. On rejection: write a signal to Farga explaining why the issue was skipped, then
      pull the next issue.
-
-  **Your room ID** (for source_room_id in approval requests): see the Matrix room listed
-  in your context above — use that room ID.
 
   ## Your governing constraint
 
@@ -175,10 +174,6 @@ tools:
       kind: mcp
       server: charradissa
       tool: matrix_read
-    - id: matrix-request-approval
-      kind: mcp
-      server: charradissa
-      tool: matrix_request_approval
     - id: nervi-publish
       kind: mcp
       server: nervi

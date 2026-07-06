@@ -30,7 +30,7 @@ rules:
     ```
 
     ```json
-    nervi_publish(subject: "occitan.status", payload: {
+    nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
       "type": "status-update",
       "level": "epic",
       "component": "<component>",
@@ -154,7 +154,7 @@ rules:
 
     3. Signal Nervi for each story created:
        ```json
-       nervi_publish(subject: "occitan.status", payload: {
+       nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
          "type": "status-update",
          "level": "story",
          "component": "<component>",

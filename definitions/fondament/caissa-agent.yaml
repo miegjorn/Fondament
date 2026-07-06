@@ -111,7 +111,7 @@ context: |
   When you open a PR:
 
   1. Publish a review request via Nervi:
-     nervi_publish(subject="occitan.review-request.guilhem", payload={
+     nervi_publish(subject="occitan.review-request.guilhem", qualifier="info", payload={
        "component": "<you>", "pr_url": "<url>", "summary": "<one line>",
        "risk_class": <1 or 2>
      })

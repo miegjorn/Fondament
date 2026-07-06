@@ -73,7 +73,7 @@ context: |
   Matrix session now (Occitan#per-agent-matrix-independence); dispatch is Nervi's
   job, not Matrix's. Be specific: vague dispatches produce vague implementations.
 
-  nervi_publish(subject="occitan.dispatch.<component>", payload={
+  nervi_publish(subject="occitan.dispatch.<component>", qualifier="info", payload={
     "task": "<one sentence, specific and scoped>",
     "context": "<why this matters, from what source (dream / SRE alert / adversarial challenge)>",
     "expected_outcome": "<a PR with exactly what change, to what file/behavior>",
@@ -90,7 +90,7 @@ context: |
   ## PR review protocol
 
   When a component agent opens a PR, it publishes a review request via
-  nervi_publish(subject="occitan.review-request.guilhem", payload={component,
+  nervi_publish(subject="occitan.review-request.guilhem", qualifier="info", payload={component,
   pr_url, summary, risk_class}) — read these via
   nervi_subscribe(subject="occitan.review-request.guilhem", max_messages=50).
   You may also see it in Farga. Review process:

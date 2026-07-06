@@ -126,7 +126,7 @@ rules:
     After filing, dispatch to the owning component agent:
 
     ```json
-    nervi_publish(subject: "occitan.dispatch.<component>", payload: {
+    nervi_publish(subject: "occitan.dispatch.<component>", qualifier: "info", payload: {
       "type": "bug",
       "ticket": <issue_number>,
       "severity": "<critical|high|security|low>",
@@ -137,7 +137,7 @@ rules:
 
     For **Security bugs**: also dispatch to the security facet explicitly:
     ```json
-    nervi_publish(subject: "occitan.dispatch.<component>", payload: {
+    nervi_publish(subject: "occitan.dispatch.<component>", qualifier: "info", payload: {
       "type": "bug",
       "ticket": <issue_number>,
       "severity": "security",
@@ -148,7 +148,7 @@ rules:
 
     Signal Nervi on creation:
     ```json
-    nervi_publish(subject: "occitan.status", payload: {
+    nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
       "type": "bug-created",
       "ticket": <issue_number>,
       "severity": "<level>",
@@ -183,7 +183,7 @@ rules:
     When the bug is closed:
 
     ```json
-    nervi_publish(subject: "occitan.status", payload: {
+    nervi_publish(subject: "occitan.status", qualifier: "info", payload: {
       "type": "bug-closed",
       "ticket": <issue_number>,
       "severity": "<level>",

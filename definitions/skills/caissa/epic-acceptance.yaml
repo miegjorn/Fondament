@@ -140,7 +140,7 @@ rules:
 
     The bug is dispatched to the owning component agent via:
     ```json
-    nervi_publish(subject: "occitan.dispatch.<component>", payload: {
+    nervi_publish(subject: "occitan.dispatch.<component>", qualifier: "info", payload: {
       "type": "bug",
       "ticket": <bug_issue_number>,
       "severity": "<critical|high|security|low>",
